@@ -1,65 +1,28 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsArray } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsObject } from 'class-validator';
 
 export class CreateApplicationDto {
   @IsString()
-  fullName: string;
+  seller_name: string;
 
   @IsEmail()
   email: string;
 
-  @IsString()
-  phone: string;
-
   @IsOptional()
   @IsString()
-  mainSalesPageLink?: string;
+  phone?: string;
 
-  @IsOptional()
   @IsString()
-  city?: string;
+  category: string;
 
-  @IsOptional()
   @IsString()
-  productsAndBrand?: string;
-
-  @IsOptional()
-  @IsArray()
-  salesCategories?: string[];
-
-  @IsOptional()
-  @IsBoolean()
-  imagesBelongToStore?: boolean;
+  language: string;
 
   @IsOptional()
   @IsString()
-  productType?: string;
+  status?: string;
 
   @IsOptional()
-  @IsString()
-  sellingDuration?: string;
-
-  @IsOptional()
-  @IsString()
-  customerFeedback?: string;
-
-  @IsOptional()
-  @IsString()
-  returnHandling?: string;
-
-  @IsOptional()
-  @IsString()
-  fakeOrdersExperience?: string;
-
-  @IsOptional()
-  @IsString()
-  shippingTime?: string;
-
-  @IsOptional()
-  @IsString()
-  deliveryArea?: string;
-
-  @IsOptional()
-  @IsArray()
-  badgeUsageLocations?: string[];
+  @IsObject()
+  submitted_fields?: Record<string, any>;
 }
 

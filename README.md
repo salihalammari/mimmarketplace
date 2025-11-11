@@ -8,7 +8,8 @@ Backend API for handling seller verification applications from the MIM Marketpla
 - ✅ Store applications in Supabase PostgreSQL database
 - ✅ RESTful API for managing applications
 - ✅ Webhook endpoint for Webflow form submissions
-- ✅ Ready for Render deployment
+- ✅ CORS enabled for all platforms (accessible from anywhere)
+- ✅ Ready for Render deployment with automatic migrations
 
 ## Tech Stack
 
@@ -84,15 +85,42 @@ The webhook handler automatically maps Webflow form fields. Supported field name
 
 ## Render Deployment
 
+### Option 1: Using render.yaml (Recommended)
+
 1. Push code to GitHub
-2. Create new Web Service in Render
-3. Connect repository
-4. Set environment variables:
+2. In Render Dashboard, go to **New** → **Blueprint**
+3. Connect your GitHub repository
+4. Render will automatically detect `render.yaml` and configure the service
+5. Set environment variables in Render Dashboard:
+   - `DATABASE_URL` - Your Supabase PostgreSQL connection string
+   - `NODE_ENV` - Already set to `production` in render.yaml
+   - `PORT` - Already set to `10000` in render.yaml
+6. Deploy! Migrations will run automatically on startup
+
+### Option 2: Manual Setup
+
+1. Push code to GitHub
+2. Create new **Web Service** in Render
+3. Connect your GitHub repository
+4. Configure:
+   - **Build Command**: `npm install && npx prisma generate && npm run build`
+   - **Start Command**: `npx prisma migrate deploy && npm run start:prod`
+   - **Health Check Path**: `/health`
+5. Set environment variables:
    - `DATABASE_URL` - Supabase PostgreSQL connection string
    - `NODE_ENV` - `production`
-5. Build command: `npm install && npx prisma generate && npm run build`
-6. Start command: `npm run start:prod`
-7. Run migrations: `npx prisma migrate deploy` (in Render Shell)
+   - `PORT` - `10000` (or let Render assign automatically)
+6. Deploy!
+
+### CORS Configuration
+
+The API is configured to accept requests from **any origin** (`origin: true`), making it accessible from:
+- Webflow forms
+- React/Vue/Angular frontends
+- Mobile applications
+- Any other platform
+
+All standard HTTP methods are allowed: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`
 
 ## Database Schema
 

@@ -8,7 +8,7 @@ export class ApplicationsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createApplicationDto: CreateApplicationDto) {
-    return this.prisma.application.create({
+    return this.prisma.applications.create({
       data: createApplicationDto,
     });
   }
@@ -41,38 +41,61 @@ export class ApplicationsService {
       return undefined;
     };
 
+    // Extract core required fields
+    const sellerName = getString('full-name') || getString('الاسم-الكامل') || '';
+    const email = getString('email') || getString('البريد-الالكتروني') || '';
+    const phone = getString('phone') || getString('whatsapp') || getString('رقم-الهاتف') || undefined;
+    
+    // Determine category and language (you may need to adjust this logic)
+    const category = getString('category') || getString('فئة') || 'general';
+    const language = getString('language') || 'en';
+
+    // Store all other fields in submitted_fields as JSON
+    const submittedFields: Record<string, any> = {
+      mainSalesPageLink: getString('main-sales-page') || getString('رابط-صفحة-البيع'),
+      city: getString('city') || getString('المدينة'),
+      productsAndBrand: getString('products-brand') || getString('المنتجات-والبراند'),
+      salesCategories: getArray('sales-categories') || getArray('فئات-البيع'),
+      imagesBelongToStore: getBoolean('images-belong-to-store') || getBoolean('هل-الصور-تنتمي'),
+      productType: getString('product-type') || getString('نوع-المنتوج'),
+      sellingDuration: getString('selling-duration') || getString('مدة-البيع'),
+      customerFeedback: getString('customer-feedback') || getString('تعليقات-الزبائن'),
+      returnHandling: getString('return-handling') || getString('إرجاع-السلعة'),
+      fakeOrdersExperience: getString('fake-orders') || getString('طلبات-مزيفة'),
+      shippingTime: getString('shipping-time') || getString('مدة-الشحن'),
+      deliveryArea: getString('delivery-area') || getString('منطقة-التوصيل'),
+      badgeUsageLocations: getArray('badge-usage') || getArray('استعمال-البادج'),
+    };
+
+    // Remove undefined values
+    Object.keys(submittedFields).forEach(key => {
+      if (submittedFields[key] === undefined) {
+        delete submittedFields[key];
+      }
+    });
+
     const applicationData: CreateApplicationDto = {
-      fullName: getString('full-name') || getString('الاسم-الكامل') || '',
-      email: getString('email') || getString('البريد-الالكتروني') || '',
-      phone: getString('phone') || getString('whatsapp') || getString('رقم-الهاتف') || '',
-      mainSalesPageLink: getString('main-sales-page') || getString('رابط-صفحة-البيع') || undefined,
-      city: getString('city') || getString('المدينة') || undefined,
-      productsAndBrand: getString('products-brand') || getString('المنتجات-والبراند') || undefined,
-      salesCategories: getArray('sales-categories') || getArray('فئات-البيع') || [],
-      imagesBelongToStore: getBoolean('images-belong-to-store') || getBoolean('هل-الصور-تنتمي') || undefined,
-      productType: getString('product-type') || getString('نوع-المنتوج') || undefined,
-      sellingDuration: getString('selling-duration') || getString('مدة-البيع') || undefined,
-      customerFeedback: getString('customer-feedback') || getString('تعليقات-الزبائن') || undefined,
-      returnHandling: getString('return-handling') || getString('إرجاع-السلعة') || undefined,
-      fakeOrdersExperience: getString('fake-orders') || getString('طلبات-مزيفة') || undefined,
-      shippingTime: getString('shipping-time') || getString('مدة-الشحن') || undefined,
-      deliveryArea: getString('delivery-area') || getString('منطقة-التوصيل') || undefined,
-      badgeUsageLocations: getArray('badge-usage') || getArray('استعمال-البادج') || [],
+      seller_name: sellerName,
+      email,
+      phone,
+      category,
+      language,
+      submitted_fields: Object.keys(submittedFields).length > 0 ? submittedFields : undefined,
     };
 
     return this.create(applicationData);
   }
 
   async findAll() {
-    return this.prisma.application.findMany({
+    return this.prisma.applications.findMany({
       orderBy: {
-        createdAt: 'desc',
+        created_at: 'desc',
       },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.application.findUnique({
+    return this.prisma.applications.findUnique({
       where: { id },
     });
   }
@@ -80,22 +103,19 @@ export class ApplicationsService {
   async updateStatus(id: string, status: string, notes?: string) {
     const updateData: any = {
       status,
-      updatedAt: new Date(),
     };
 
-    if (status === 'qualified' || status === 'badge_activated') {
-      updateData.reviewedAt = new Date();
-    }
-
-    if (status === 'badge_activated') {
-      updateData.badgeActivatedAt = new Date();
-    }
-
     if (notes) {
-      updateData.notes = notes;
+      // Store notes in submitted_fields or create a separate field if needed
+      const existing = await this.prisma.applications.findUnique({ where: { id } });
+      const submittedFields = existing?.submitted_fields as Record<string, any> || {};
+      updateData.submitted_fields = {
+        ...submittedFields,
+        notes,
+      };
     }
 
-    return this.prisma.application.update({
+    return this.prisma.applications.update({
       where: { id },
       data: updateData,
     });
