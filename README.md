@@ -92,11 +92,14 @@ The webhook handler automatically maps Webflow form fields. Supported field name
 3. Connect your GitHub repository
 4. Render will automatically detect `render.yaml` and configure the service
 5. Set environment variables in Render Dashboard:
-   - `DATABASE_URL` - Your Supabase PostgreSQL connection string (use port 6543 for pooling):
+   - `DATABASE_URL` - Your Supabase PostgreSQL connection string (use **direct connection**, port 5432):
      ```
-     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@db.tjxotorfwaqzcvtoealh.supabase.co:5432/postgres
      ```
-     ⚠️ **Important**: No quotes, no spaces, must start with `postgresql://`
+     ⚠️ **Important**: 
+     - No quotes, no spaces, must start with `postgresql://`
+     - Use **direct connection** (port 5432), NOT pooled (6543)
+     - Get this from: Supabase → Settings → Database → Connection string → URI (direct)
    - `NODE_ENV` - Already set to `production` in render.yaml
    - `PORT` - Already set to `10000` in render.yaml
 6. Deploy! Migrations will run automatically on startup
@@ -111,7 +114,11 @@ The webhook handler automatically maps Webflow form fields. Supported field name
    - **Start Command**: `npx prisma migrate deploy && npm run start:prod`
    - **Health Check Path**: `/health`
 5. Set environment variables:
-   - `DATABASE_URL` - Supabase PostgreSQL connection string
+   - `DATABASE_URL` - Supabase PostgreSQL **direct connection** string (port 5432):
+     ```
+     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@db.tjxotorfwaqzcvtoealh.supabase.co:5432/postgres
+     ```
+     ⚠️ Use direct connection, NOT pooled (6543)
    - `NODE_ENV` - `production`
    - `PORT` - `10000` (or let Render assign automatically)
 6. Deploy!

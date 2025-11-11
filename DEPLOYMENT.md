@@ -26,15 +26,17 @@
 
 3. **Set Environment Variables**
    - In Render Dashboard, go to your service → **Environment**
-   - Add `DATABASE_URL` with your Supabase connection string (use port 6543 for connection pooling):
+   - Add `DATABASE_URL` with your Supabase **direct connection** string (port 5432):
      ```
-     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@db.tjxotorfwaqzcvtoealh.supabase.co:5432/postgres
      ```
-     ⚠️ **Important**: 
+     ⚠️ **Critical**: 
      - No quotes around the value
      - No leading/trailing spaces
      - Must start directly with `postgresql://`
-     - Use port `6543` (not 5432) for connection pooling
+     - Use **direct connection** (port 5432), NOT pooled (6543)
+     - Get this from: Supabase Dashboard → Settings → Database → Connection string → **URI (direct)**
+     - ❌ Do NOT use the pooled connection (port 6543) - Render cannot connect to it
    - `NODE_ENV` and `PORT` are already configured in `render.yaml`
 
 4. **Deploy**
@@ -85,9 +87,11 @@ https://your-app-name.onrender.com
 - Check build logs in Render Dashboard
 
 ### Database Connection Issues
-- Verify `DATABASE_URL` is set correctly
+- **Use direct connection (port 5432), NOT pooled (6543)**
+- Verify `DATABASE_URL` is set correctly (no quotes, no spaces)
 - Ensure Supabase allows connections from Render's IPs
-- Check if you need to add `?sslmode=require` to connection string
+- If you see `P1001: Can't reach database server`, you're likely using the pooled connection - switch to direct
+- Get the correct connection string from: Supabase → Settings → Database → Connection string → **URI (direct)**
 
 ### Migration Fails
 - Ensure database is accessible
@@ -103,15 +107,19 @@ https://your-app-name.onrender.com
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | ✅ Yes | - | Supabase PostgreSQL connection string (port 6543 for pooling) |
+| `DATABASE_URL` | ✅ Yes | - | Supabase PostgreSQL **direct connection** string (port 5432) |
 | `NODE_ENV` | No | `production` | Environment mode |
 | `PORT` | No | `10000` | Server port (Render assigns automatically) |
 
-**DATABASE_URL Format:**
+**DATABASE_URL Format (Direct Connection):**
 ```
-postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@db.tjxotorfwaqzcvtoealh.supabase.co:5432/postgres
 ```
-⚠️ **Critical**: No quotes, no spaces, must start with `postgresql://`
+⚠️ **Critical**: 
+- No quotes, no spaces, must start with `postgresql://`
+- Use **direct connection** (port 5432), NOT pooled (6543)
+- Render cannot connect to Supabase's pooled connection (port 6543)
+- Get from: Supabase Dashboard → Settings → Database → Connection string → **URI (direct)**
 
 ## Monitoring
 

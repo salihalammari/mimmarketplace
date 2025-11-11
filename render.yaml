@@ -2,9 +2,14 @@ services:
   - type: web
     name: mim-backend
     env: node
-    buildCommand: npm install && npx prisma generate
-    startCommand: npx prisma migrate deploy && npm run start
-    autoDeploy: true
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
