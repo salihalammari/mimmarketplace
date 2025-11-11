@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id                    String   @id @default(uuid())
+  
+  // Contact Information
+  fullName              String
+  email                 String
+  phone                 String
+  mainSalesPageLink     String?
+  city                  String?
+  
+  // Products and Brand
+  productsAndBrand      String?
+  salesCategories       String[] // Array of selected categories
+  imagesBelongToStore   Boolean?
+  productType           String?  // handmade, local, imported
+  
+  // Experience and Customer Service
+  sellingDuration       String?  // less than 3 months, 3-6 months, 6-12 months, more than 1 year
+  customerFeedback      String?  // yes often, sometimes, rarely
+  returnHandling        String?
+  fakeOrdersExperience  String?  // yes, no, sometimes
+  
+  // Delivery
+  shippingTime          String?  // same day, 1-2 days, 3-5 days, more than 5 days
+  deliveryArea          String?  // all morocco, specific cities
+  
+  // Badge Usage
+  badgeUsageLocations   String[] // Array of locations where badge will be used
+  
+  // Status and Metadata
+  status                String   @default("pending") // pending, needs_info, qualified, rejected, badge_activated
+  badgeLevel            Int      @default(1) // 1: Verified, 2: Trusted, 3: Golden
+  notes                 String?
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  reviewedAt            DateTime?
+  badgeActivatedAt      DateTime?
+  
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
