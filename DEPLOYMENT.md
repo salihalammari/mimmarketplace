@@ -26,10 +26,15 @@
 
 3. **Set Environment Variables**
    - In Render Dashboard, go to your service → **Environment**
-   - Add `DATABASE_URL` with your Supabase connection string:
+   - Add `DATABASE_URL` with your Supabase connection string (use port 6543 for connection pooling):
      ```
-     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require
+     postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
      ```
+     ⚠️ **Important**: 
+     - No quotes around the value
+     - No leading/trailing spaces
+     - Must start directly with `postgresql://`
+     - Use port `6543` (not 5432) for connection pooling
    - `NODE_ENV` and `PORT` are already configured in `render.yaml`
 
 4. **Deploy**
@@ -98,9 +103,15 @@ https://your-app-name.onrender.com
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | ✅ Yes | - | Supabase PostgreSQL connection string |
+| `DATABASE_URL` | ✅ Yes | - | Supabase PostgreSQL connection string (port 6543 for pooling) |
 | `NODE_ENV` | No | `production` | Environment mode |
 | `PORT` | No | `10000` | Server port (Render assigns automatically) |
+
+**DATABASE_URL Format:**
+```
+postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+```
+⚠️ **Critical**: No quotes, no spaces, must start with `postgresql://`
 
 ## Monitoring
 
