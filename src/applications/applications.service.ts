@@ -86,8 +86,19 @@ export class ApplicationsService {
     return this.create(applicationData);
   }
 
-  async findAll() {
+  async findAll(status?: string) {
+    const where = status ? { status } : {};
     return this.prisma.applications.findMany({
+      where,
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }
+
+  async findByStatus(status: string) {
+    return this.prisma.applications.findMany({
+      where: { status },
       orderBy: {
         created_at: 'desc',
       },
@@ -112,13 +123,45 @@ export class ApplicationsService {
       updateData.submitted_fields = {
         ...submittedFields,
         notes,
+        adminNotes: notes,
+        statusUpdatedAt: new Date().toISOString(),
       };
     }
+
+    // Create audit log
+    await this.prisma.audit_logs.create({
+      data: {
+        entity_type: 'application',
+        entity_id: id,
+        action: `status_updated_to_${status}`,
+        meta: { status, notes },
+      },
+    });
 
     return this.prisma.applications.update({
       where: { id },
       data: updateData,
     });
+  }
+
+  async getStats() {
+    const [total, pending, qualified, rejected, needsInfo, badgeActivated] = await Promise.all([
+      this.prisma.applications.count(),
+      this.prisma.applications.count({ where: { status: 'pending' } }),
+      this.prisma.applications.count({ where: { status: 'qualified' } }),
+      this.prisma.applications.count({ where: { status: 'rejected' } }),
+      this.prisma.applications.count({ where: { status: 'needs_info' } }),
+      this.prisma.applications.count({ where: { status: 'badge_activated' } }),
+    ]);
+
+    return {
+      total,
+      pending,
+      qualified,
+      rejected,
+      needsInfo,
+      badgeActivated,
+    };
   }
 }
 

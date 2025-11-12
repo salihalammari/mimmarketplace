@@ -61,8 +61,10 @@ npm run start:dev
 3. Click **+ Add webhook**
 4. Select **Form submission: API V2**
 5. Enter your webhook URL:
-   - Production: `https://your-render-url.onrender.com/webhooks/webflow`
+   - Production: `https://mimmarketplace.onrender.com/webhooks/webflow`
 6. Save the webhook
+
+📖 **See [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md) for complete integration instructions**
 
 ### Form Field Mapping
 

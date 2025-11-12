@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 
@@ -13,8 +13,18 @@ export class ApplicationsController {
   }
 
   @Get()
-  findAll() {
-    return this.applicationsService.findAll();
+  findAll(@Query('status') status?: string) {
+    return this.applicationsService.findAll(status);
+  }
+
+  @Get('stats')
+  getStats() {
+    return this.applicationsService.getStats();
+  }
+
+  @Get('status/:status')
+  findByStatus(@Param('status') status: string) {
+    return this.applicationsService.findByStatus(status);
   }
 
   @Get(':id')
