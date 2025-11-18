@@ -11,11 +11,15 @@ async function bootstrap() {
   // Enable CORS for all origins (optional)
   app.enableCors({ origin: true, methods: 'GET,POST,PATCH,DELETE,OPTIONS' });
 
-  // Configure body parser to preserve raw body for webhook signature verification
-  // Use json parser with verify to preserve raw body
-  app.use('/webhooks/webflow', bodyParser.json({ 
+  // NestJS handles JSON parsing automatically, but we need to preserve raw body for webhooks
+  // Use body-parser with verify to capture raw body
+  app.use(bodyParser.json({
+    limit: '10mb',
     verify: (req: any, res, buf) => {
-      req.rawBody = buf.toString('utf8');
+      // Preserve raw body for webhook signature verification
+      if (req.url && req.url.includes('/webhooks/webflow')) {
+        req.rawBody = buf.toString('utf8');
+      }
     }
   }));
 
@@ -43,8 +47,14 @@ async function bootstrap() {
   // Use Render's dynamic port
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
+  
+  // Determine base URL dynamically
+  const baseUrl = process.env.RENDER_EXTERNAL_URL 
+    ? process.env.RENDER_EXTERNAL_URL 
+    : `http://localhost:${port}`;
+  
   console.log(`🚀 Server running on port ${port}`);
-  console.log(`📊 Admin Dashboard: http://localhost:${port}/admin/`);
+  console.log(`📊 Admin Dashboard: ${baseUrl}/admin`);
 }
 
 bootstrap();

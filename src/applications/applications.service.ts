@@ -14,62 +14,119 @@ export class ApplicationsService {
   }
 
   async createFromWebflow(webhookData: WebflowWebhookDto) {
-    // Map Webflow form fields to our database schema
-    const formData = webhookData.data;
-    
-    // Helper function to get string value
-    const getString = (key: string): string | undefined => {
-      const value = formData[key];
-      return typeof value === 'string' ? value : undefined;
-    };
+    console.log('=== Creating Application from Webflow ===');
+    console.log('Webhook data:', JSON.stringify(webhookData, null, 2));
+    const formData = webhookData.data || {};
+    console.log('Form data keys:', Object.keys(formData));
+    console.log('Form data:', JSON.stringify(formData, null, 2));
 
-    // Helper function to get array value
-    const getArray = (key: string): string[] => {
-      const value = formData[key];
-      if (Array.isArray(value)) return value;
-      if (typeof value === 'string' && value) return [value];
-      return [];
-    };
+    const normalizeKey = (key: string) =>
+      key
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-');
 
-    // Helper function to get boolean value
-    const getBoolean = (key: string): boolean | undefined => {
-      const value = formData[key];
-      if (typeof value === 'boolean') return value;
-      if (typeof value === 'string') {
-        return value.toLowerCase() === 'yes' || value.toLowerCase() === 'نعم' || value === 'true';
+    const normalizedData = Object.entries(formData).reduce<Record<string, any>>(
+      (acc, [key, value]) => {
+        acc[normalizeKey(key)] = value;
+        return acc;
+      },
+      {},
+    );
+
+    const getValue = (...keys: string[]) => {
+      for (const key of keys) {
+        const normalizedKey = normalizeKey(key);
+        if (normalizedData[normalizedKey] !== undefined) {
+          return normalizedData[normalizedKey];
+        }
       }
       return undefined;
     };
 
-    // Extract core required fields
-    const sellerName = getString('full-name') || getString('الاسم-الكامل') || '';
-    const email = getString('email') || getString('البريد-الالكتروني') || '';
-    const phone = getString('phone') || getString('whatsapp') || getString('رقم-الهاتف') || undefined;
-    
-    // Determine category and language (you may need to adjust this logic)
-    const category = getString('category') || getString('فئة') || 'general';
-    const language = getString('language') || 'en';
-
-    // Store all other fields in submitted_fields as JSON
-    const submittedFields: Record<string, any> = {
-      mainSalesPageLink: getString('main-sales-page') || getString('رابط-صفحة-البيع'),
-      city: getString('city') || getString('المدينة'),
-      productsAndBrand: getString('products-brand') || getString('المنتجات-والبراند'),
-      salesCategories: getArray('sales-categories') || getArray('فئات-البيع'),
-      imagesBelongToStore: getBoolean('images-belong-to-store') || getBoolean('هل-الصور-تنتمي'),
-      productType: getString('product-type') || getString('نوع-المنتوج'),
-      sellingDuration: getString('selling-duration') || getString('مدة-البيع'),
-      customerFeedback: getString('customer-feedback') || getString('تعليقات-الزبائن'),
-      returnHandling: getString('return-handling') || getString('إرجاع-السلعة'),
-      fakeOrdersExperience: getString('fake-orders') || getString('طلبات-مزيفة'),
-      shippingTime: getString('shipping-time') || getString('مدة-الشحن'),
-      deliveryArea: getString('delivery-area') || getString('منطقة-التوصيل'),
-      badgeUsageLocations: getArray('badge-usage') || getArray('استعمال-البادج'),
+    const getString = (...keys: string[]): string | undefined => {
+      const value = getValue(...keys);
+      if (value === undefined || value === null) return undefined;
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.join(', ');
+      return String(value);
     };
 
-    // Remove undefined values
-    Object.keys(submittedFields).forEach(key => {
-      if (submittedFields[key] === undefined) {
+    const getArray = (...keys: string[]): string[] => {
+      const value = getValue(...keys);
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        if (!value.trim()) return [];
+        if (value.includes(',')) {
+          return value
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+        }
+        return [value.trim()];
+      }
+      return [];
+    };
+
+    const getBoolean = (...keys: string[]): boolean | undefined => {
+      const value = getValue(...keys);
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (['yes', 'oui', 'true', '1', 'نعم', 'صح'].includes(normalized)) return true;
+        if (['no', 'non', 'false', '0', 'لا'].includes(normalized)) return false;
+      }
+      return undefined;
+    };
+
+    const sellerName =
+      getString('full-name', 'full_name', 'full name', 'الاسم-الكامل') || '';
+    const email = getString('email', 'البريد-الالكتروني') || '';
+    const phone = getString('phone', 'phone-number', 'whatsapp', 'رقم-الهاتف');
+
+    const categoryFromForm = getArray(
+      'products-category',
+      'category',
+      'فئات-البيع',
+      'category-select',
+    );
+    const category = categoryFromForm[0] || 'general';
+    const language =
+      getString('language', 'form-language', 'اللغة') ||
+      (webhookData.site?.includes('.ma') ? 'ar' : 'en');
+
+    const submittedFields: Record<string, any> = {
+      mainSalesPageLink: getString('main-sales-page', 'selling-page', 'رابط-صفحة-البيع'),
+      secondarySalesPageLink: getString('secondary-selling-page', 'secondary page'),
+      city: getString('city', 'المدينة'),
+      productsAndBrand: getString('products-brand', 'products', 'products-and-brand', 'products category'),
+      salesCategories: categoryFromForm,
+      otherProducts: getString('others', 'other-products'),
+      imagesBelongToStore: getBoolean('images-belong-to-store', 'do-you-sell-the-same-product-pictu'),
+      productType: getString('product-type', 'products-type'),
+      sellingDuration: getString('selling-duration', 'how-long-youve-been-selling'),
+      customerFeedback: getString('customer-feedback', 'do-you-receive-feedbacks'),
+      returnHandling: getString('return-handling', 'return-policies'),
+      fakeOrdersExperience: getString('fake-orders', 'do-you-face-fake-orders'),
+      shippingTime: getString('shipping-time', 'delivery-duration'),
+      deliveryArea: getString('delivery-area', 'delivery-zone'),
+      badgeUsageLocations: getArray('badge-usage', 'badge-use'),
+      preferredBadgeUse: getString('badge-use'),
+      whatsappNumber: getString('whatsapp'),
+      instagramHandle: getString('instagram', 'instagram-link'),
+      facebookHandle: getString('facebook', 'facebook-link'),
+      tiktokHandle: getString('tiktok'),
+      additionalNotes: getString('notes', 'message'),
+    };
+
+    Object.keys(submittedFields).forEach((key) => {
+      const value = submittedFields[key];
+      if (
+        value === undefined ||
+        value === null ||
+        (typeof value === 'string' && !value.trim()) ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
         delete submittedFields[key];
       }
     });
@@ -80,10 +137,21 @@ export class ApplicationsService {
       phone,
       category,
       language,
-      submitted_fields: Object.keys(submittedFields).length > 0 ? submittedFields : undefined,
+      submitted_fields:
+        Object.keys(submittedFields).length > 0 ? submittedFields : undefined,
     };
 
-    return this.create(applicationData);
+    console.log('=== Application Data to Save ===');
+    console.log('Core fields:', { seller_name: sellerName, email, phone, category, language });
+    console.log('Submitted fields count:', Object.keys(submittedFields).length);
+    console.log('Submitted fields:', JSON.stringify(submittedFields, null, 2));
+
+    const result = await this.create(applicationData);
+    console.log('=== Application Saved Successfully ===');
+    console.log('Application ID:', result.id);
+    console.log('Total fields saved:', Object.keys(submittedFields).length);
+    
+    return result;
   }
 
   async findAll(status?: string) {

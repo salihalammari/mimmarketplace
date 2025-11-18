@@ -343,7 +343,10 @@
             <th>Seller Name</th>
             <th>Email</th>
             <th>Phone</th>
-            <th>Category</th>
+            <th>City</th>
+            <th>Shop URL</th>
+            <th>Selling Duration</th>
+            <th>Badge Use</th>
             <th>Status</th>
             <th>Created</th>
             <th>Actions</th>
@@ -430,7 +433,12 @@
   </div>
 
   <script>
-    const API_URL = 'https://mimmarketplace.onrender.com';
+    // Use Render URL if available, otherwise use current origin
+    const API_URL = window.location.origin.includes('render.com') 
+      ? window.location.origin 
+      : (window.location.origin.includes('localhost') 
+          ? 'http://localhost:3000' 
+          : 'https://mimmarketplace.onrender.com');
     let currentStatusFilter = '';
     let selectedBadgeLevel = 1;
 
@@ -516,11 +524,26 @@
           return;
         }
 
-        tbody.innerHTML = applications.map(app => `
+        tbody.innerHTML = applications.map(app => {
+          const submittedFields = app.submitted_fields || {};
+          const shopUrl = submittedFields.mainSalesPageLink;
+          const badgeUse = submittedFields.preferredBadgeUse || (Array.isArray(submittedFields.badgeUsageLocations) 
+            ? submittedFields.badgeUsageLocations.join(', ')
+            : submittedFields.badgeUsageLocations || '-');
+
+          return `
           <tr>
             <td><strong>${app.seller_name}</strong></td>
             <td>${app.email}</td>
             <td>${app.phone || '-'}</td>
+            <td>${submittedFields.city || '-'}</td>
+            <td>
+              ${shopUrl 
+                ? `<a href="${shopUrl}" target="_blank" style="color:#667eea;">Visit</a>` 
+                : '-'}
+            </td>
+            <td>${submittedFields.sellingDuration || '-'}</td>
+            <td>${badgeUse}</td>
             <td>${app.category}</td>
             <td><span class="status-badge status-${app.status}">${app.status.replace('_', ' ')}</span></td>
             <td>${new Date(app.created_at).toLocaleDateString()}</td>
@@ -532,7 +555,8 @@
               </div>
             </td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
 
         table.style.display = 'table';
       } catch (error) {
@@ -578,6 +602,12 @@
             <input type="text" value="${submittedFields.city}" readonly>
           </div>
           ` : ''}
+          ${submittedFields.secondarySalesPageLink ? `
+          <div class="form-group">
+            <label>Secondary Shop URL</label>
+            <a href="${submittedFields.secondarySalesPageLink}" target="_blank" style="color: #667eea;">${submittedFields.secondarySalesPageLink}</a>
+          </div>
+          ` : ''}
           ${submittedFields.mainSalesPageLink ? `
           <div class="form-group">
             <label>Shop URL</label>
@@ -594,6 +624,12 @@
           <div class="form-group">
             <label>Sales Categories</label>
             <input type="text" value="${Array.isArray(submittedFields.salesCategories) ? submittedFields.salesCategories.join(', ') : submittedFields.salesCategories}" readonly>
+          </div>
+          ` : ''}
+          ${submittedFields.otherProducts ? `
+          <div class="form-group">
+            <label>Other Products</label>
+            <textarea readonly>${submittedFields.otherProducts}</textarea>
           </div>
           ` : ''}
           ${submittedFields.productType ? `
@@ -618,6 +654,12 @@
           <div class="form-group">
             <label>Delivery Area</label>
             <input type="text" value="${submittedFields.deliveryArea}" readonly>
+          </div>
+          ` : ''}
+          ${submittedFields.preferredBadgeUse ? `
+          <div class="form-group">
+            <label>Preferred Badge Use</label>
+            <input type="text" value="${submittedFields.preferredBadgeUse}" readonly>
           </div>
           ` : ''}
           ${submittedFields.customerFeedback ? `
@@ -648,6 +690,36 @@
           <div class="form-group">
             <label>Badge Usage Locations</label>
             <input type="text" value="${Array.isArray(submittedFields.badgeUsageLocations) ? submittedFields.badgeUsageLocations.join(', ') : submittedFields.badgeUsageLocations}" readonly>
+          </div>
+          ` : ''}
+          ${submittedFields.whatsappNumber ? `
+          <div class="form-group">
+            <label>WhatsApp</label>
+            <input type="text" value="${submittedFields.whatsappNumber}" readonly>
+          </div>
+          ` : ''}
+          ${submittedFields.instagramHandle ? `
+          <div class="form-group">
+            <label>Instagram</label>
+            <a href="${submittedFields.instagramHandle}" target="_blank" style="color:#667eea;">${submittedFields.instagramHandle}</a>
+          </div>
+          ` : ''}
+          ${submittedFields.facebookHandle ? `
+          <div class="form-group">
+            <label>Facebook</label>
+            <a href="${submittedFields.facebookHandle}" target="_blank" style="color:#667eea;">${submittedFields.facebookHandle}</a>
+          </div>
+          ` : ''}
+          ${submittedFields.tiktokHandle ? `
+          <div class="form-group">
+            <label>TikTok</label>
+            <a href="${submittedFields.tiktokHandle}" target="_blank" style="color:#667eea;">${submittedFields.tiktokHandle}</a>
+          </div>
+          ` : ''}
+          ${submittedFields.additionalNotes ? `
+          <div class="form-group">
+            <label>Additional Notes</label>
+            <textarea readonly>${submittedFields.additionalNotes}</textarea>
           </div>
           ` : ''}
           ${submittedFields.adminNotes ? `
