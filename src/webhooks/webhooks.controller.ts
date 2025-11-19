@@ -14,70 +14,120 @@ export class WebhooksController {
   @HttpCode(HttpStatus.OK)
   // @UseGuards(WebflowWebhookGuard) // Temporarily disabled for testing
   async handleWebflowWebhook(@Body() body: any, @Req() req: Request) {
-    // Use @Body() decorator - NestJS will parse it automatically
-    const webhookData = body || req.body || {};
     this.logger.log('=== Webflow Webhook Received ===');
     this.logger.log('Content-Type:', req.headers['content-type']);
-    this.logger.log('Body type:', typeof req.body);
-    this.logger.log('Body is array?', Array.isArray(req.body));
-    this.logger.log('Body keys:', req.body ? Object.keys(req.body) : 'null');
-    this.logger.log('Full body:', JSON.stringify(req.body, null, 2));
+    this.logger.log('Headers:', JSON.stringify(req.headers, null, 2));
     
-    // Try to parse raw body if body is empty
-    let parsedBody = req.body;
+    // Try multiple ways to get the body
+    let parsedBody = body || req.body || {};
+    
+    // If body is empty, try raw body
     if ((!parsedBody || Object.keys(parsedBody).length === 0) && (req as any).rawBody) {
       try {
         parsedBody = JSON.parse((req as any).rawBody);
-        this.logger.log('Parsed from rawBody:', JSON.stringify(parsedBody, null, 2));
+        this.logger.log('Parsed from rawBody');
       } catch (e) {
         this.logger.error('Failed to parse rawBody:', e);
       }
     }
     
+    this.logger.log('Body type:', typeof parsedBody);
+    this.logger.log('Body is array?', Array.isArray(parsedBody));
+    this.logger.log('Body keys:', parsedBody ? Object.keys(parsedBody) : 'null');
+    this.logger.log('Full body:', JSON.stringify(parsedBody, null, 2));
+    
     try {
-      // Webflow API V2 sends data directly in the body, not nested
-      // The body contains form field names as keys
-      let formData = parsedBody;
+      // Webflow API V2 can send data in multiple formats:
+      // 1. Direct: { "field-name": "value", ... }
+      // 2. Nested: { "data": { "field-name": "value", ... } }
+      // 3. With metadata: { "name": "...", "data": { ... }, "site": "..." }
+      // 4. Array format: [{ "name": "field", "value": "data" }]
       
-      // Check if data is nested (some webhook formats)
-      if (parsedBody?.data && typeof parsedBody.data === 'object') {
-        formData = parsedBody.data;
+      let formData: Record<string, any> = {};
+      
+      // Handle array format (Webflow sometimes sends this)
+      if (Array.isArray(parsedBody)) {
+        this.logger.log('Body is array format, converting...');
+        parsedBody.forEach((item: any) => {
+          if (item.name && item.value !== undefined) {
+            formData[item.name] = item.value;
+          } else if (item.field && item.value !== undefined) {
+            formData[item.field] = item.value;
+          }
+        });
+      }
+      // Handle nested data format
+      else if (parsedBody?.data && typeof parsedBody.data === 'object') {
         this.logger.log('Using nested data field');
+        formData = parsedBody.data;
+      }
+      // Handle direct format (fields at root level)
+      else if (parsedBody && typeof parsedBody === 'object') {
+        this.logger.log('Using direct body format');
+        formData = { ...parsedBody };
       }
       
       // Remove metadata fields that Webflow might send
-      const metadataFields = ['name', 'site', 'submittedAt', 'formId', 'formName'];
+      const metadataFields = [
+        'name', 'site', 'submittedAt', 'formId', 'formName', 
+        'form', 'id', 'createdOn', 'updatedOn', 'archived',
+        'draft', 'test', 'lastPublished', 'lastUpdated'
+      ];
+      
       const cleanFormData: Record<string, any> = {};
       
       if (formData && typeof formData === 'object') {
         Object.keys(formData).forEach(key => {
-          if (!metadataFields.includes(key)) {
-            cleanFormData[key] = formData[key];
+          // Skip metadata fields
+          if (metadataFields.includes(key.toLowerCase())) {
+            return;
           }
+          
+          const value = formData[key];
+          
+          // Skip null, undefined, or empty strings
+          if (value === null || value === undefined) {
+            return;
+          }
+          
+          // Handle empty strings
+          if (typeof value === 'string' && value.trim() === '') {
+            return;
+          }
+          
+          // Store the value
+          cleanFormData[key] = value;
         });
       }
       
       this.logger.log('Clean form data keys:', Object.keys(cleanFormData));
       this.logger.log('Clean form data:', JSON.stringify(cleanFormData, null, 2));
       
-      // If still empty, return error
+      // If still empty, log detailed info and return error
       if (!cleanFormData || Object.keys(cleanFormData).length === 0) {
         this.logger.error('Empty form data after processing');
-        this.logger.error('Raw body (first 1000 chars):', (req as any).rawBody?.substring(0, 1000));
+        this.logger.error('Original body keys:', Object.keys(parsedBody));
+        this.logger.error('Raw body (first 2000 chars):', (req as any).rawBody?.substring(0, 2000));
         return {
           success: false,
           message: 'Invalid webhook data: no form fields found',
           receivedBody: parsedBody,
-          rawBodyPreview: (req as any).rawBody?.substring(0, 500),
+          rawBodyPreview: (req as any).rawBody?.substring(0, 1000),
+          debug: {
+            bodyType: typeof parsedBody,
+            isArray: Array.isArray(parsedBody),
+            keys: Object.keys(parsedBody),
+            hasData: !!parsedBody?.data,
+          },
         };
       }
       
       // Create a proper WebflowWebhookDto structure
       const webhookDto: WebflowWebhookDto = {
-        name: parsedBody.name || 'Application form',
-        site: parsedBody.site || req.headers['x-webflow-site'] || '',
+        name: parsedBody.name || parsedBody.formName || 'Application form',
+        site: parsedBody.site || req.headers['x-webflow-site'] || req.headers['webflow-site'] || '',
         data: cleanFormData,
-        submittedAt: parsedBody.submittedAt || new Date().toISOString(),
+        submittedAt: parsedBody.submittedAt || parsedBody.createdOn || new Date().toISOString(),
       };
       
       this.logger.log('Processed webhook DTO:', JSON.stringify(webhookDto, null, 2));

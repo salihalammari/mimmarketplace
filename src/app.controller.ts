@@ -10,19 +10,24 @@ export class AppController {
 
   @Get('health')
   async health() {
-    const healthStatus = {
+    const healthStatus: {
+      status: string;
+      timestamp: string;
+      database: 'connected' | 'disconnected' | 'unknown';
+      error?: string;
+    } = {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      database: 'unknown' as 'connected' | 'disconnected' | 'unknown',
+      database: 'unknown',
     };
 
     // Check database connection
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       healthStatus.database = 'connected';
-    } catch (error) {
+    } catch (error: any) {
       healthStatus.database = 'disconnected';
-      healthStatus.error = error.message;
+      healthStatus.error = error?.message || 'Unknown error';
     }
 
     return healthStatus;

@@ -79,40 +79,70 @@ export class ApplicationsService {
       return undefined;
     };
 
-    const sellerName =
-      getString('full-name', 'full_name', 'full name', 'الاسم-الكامل') || '';
-    const email = getString('email', 'البريد-الالكتروني') || '';
-    const phone = getString('phone', 'phone-number', 'whatsapp', 'رقم-الهاتف');
-
-    const categoryFromForm = getArray(
-      'products-category',
-      'category',
-      'فئات-البيع',
-      'category-select',
+    // Extract required fields - using exact Webflow form field names
+    const sellerName = getString(
+      'full_name', 'full-name', 'full name', 'fullname',
+      'الاسم-الكامل', 'الاسم الكامل', 'name', 'seller-name', 'seller_name'
     );
-    const category = categoryFromForm[0] || 'general';
-    const language =
-      getString('language', 'form-language', 'اللغة') ||
-      (webhookData.site?.includes('.ma') ? 'ar' : 'en');
+    const email = getString(
+      'email', 'البريد-الالكتروني', 'البريد الالكتروني', 
+      'e-mail', 'email-address', 'email_address'
+    );
+    const phone = getString(
+      'phone_number', 'phone-number', 'phone', 'whatsapp', 
+      'رقم-الهاتف', 'رقم الهاتف', 'tel', 'telephone', 'mobile'
+    );
 
+    // Products category - can be array or string
+    const categoryFromForm = getArray(
+      'products_category', 'products-category', 'products_category',
+      'category', 'categories', 'فئات-البيع', 'فئات البيع',
+      'category-select', 'category_select', 'product-category'
+    );
+    const category = categoryFromForm[0] || getString('products_category', 'category', 'فئة') || 'general';
+    const language =
+      getString('language', 'form-language', 'form_language', 'اللغة', 'lang') ||
+      (webhookData.site?.includes('.ma') ? 'ar' : 'en');
+    
+    // Validate required fields
+    if (!sellerName || !sellerName.trim()) {
+      throw new Error('Missing required field: seller name (full_name)');
+    }
+    if (!email || !email.trim()) {
+      throw new Error('Missing required field: email');
+    }
+    if (!email.includes('@')) {
+      throw new Error('Invalid email format');
+    }
+
+    // Map all fields from Webflow form to database structure
     const submittedFields: Record<string, any> = {
-      mainSalesPageLink: getString('main-sales-page', 'selling-page', 'رابط-صفحة-البيع'),
-      secondarySalesPageLink: getString('secondary-selling-page', 'secondary page'),
+      // Main fields
+      sellingPage: getString('selling_page', 'selling-page', 'main-sales-page'),
+      secondarySellingPage: getString('secondarys_selling_page', 'secondarys-selling-page', 'secondary-selling-page', 'secondary_selling_page'),
       city: getString('city', 'المدينة'),
-      productsAndBrand: getString('products-brand', 'products', 'products-and-brand', 'products category'),
-      salesCategories: categoryFromForm,
+      productsCategory: categoryFromForm.length > 0 ? categoryFromForm : getString('products_category', 'products-category'),
       otherProducts: getString('others', 'other-products'),
-      imagesBelongToStore: getBoolean('images-belong-to-store', 'do-you-sell-the-same-product-pictu'),
-      productType: getString('product-type', 'products-type'),
-      sellingDuration: getString('selling-duration', 'how-long-youve-been-selling'),
-      customerFeedback: getString('customer-feedback', 'do-you-receive-feedbacks'),
-      returnHandling: getString('return-handling', 'return-policies'),
-      fakeOrdersExperience: getString('fake-orders', 'do-you-face-fake-orders'),
-      shippingTime: getString('shipping-time', 'delivery-duration'),
-      deliveryArea: getString('delivery-area', 'delivery-zone'),
-      badgeUsageLocations: getArray('badge-usage', 'badge-use'),
-      preferredBadgeUse: getString('badge-use'),
-      whatsappNumber: getString('whatsapp'),
+      validProduct: getBoolean('valide_product', 'valide-product', 'valid-product', 'valid_product'),
+      productsType: getString('products_type', 'products-type', 'product-type', 'product_type'),
+      timeSelling: getString('time_selling', 'time-selling', 'selling-duration', 'selling_duration'),
+      feedbacks: getString('feedbacks', 'customer-feedback', 'customer_feedback'),
+      returnPolicies: getString('return_policies', 'return-policies', 'return-handling', 'return_handling'),
+      fakeOrders: getString('fake_orders', 'fake-orders', 'fake-orders-experience', 'fake_orders_experience'),
+      
+      // Additional fields (for backward compatibility)
+      mainSalesPageLink: getString('selling_page', 'selling-page', 'main-sales-page'),
+      secondarySalesPageLink: getString('secondarys_selling_page', 'secondarys-selling-page', 'secondary-selling-page'),
+      salesCategories: categoryFromForm,
+      productsAndBrand: getString('products_category', 'products-category'),
+      sellingDuration: getString('time_selling', 'time-selling', 'selling-duration'),
+      customerFeedback: getString('feedbacks', 'customer-feedback'),
+      returnHandling: getString('return_policies', 'return-policies', 'return-handling'),
+      fakeOrdersExperience: getString('fake_orders', 'fake-orders'),
+      productType: getString('products_type', 'products-type'),
+      
+      // Optional fields that might exist
+      whatsappNumber: getString('whatsapp', 'phone_number', 'phone-number'),
       instagramHandle: getString('instagram', 'instagram-link'),
       facebookHandle: getString('facebook', 'facebook-link'),
       tiktokHandle: getString('tiktok'),
@@ -131,11 +161,12 @@ export class ApplicationsService {
       }
     });
 
+    // Only include phone if it has a value
     const applicationData: CreateApplicationDto = {
-      seller_name: sellerName,
-      email,
-      phone,
-      category,
+      seller_name: sellerName.trim(),
+      email: email.trim().toLowerCase(),
+      ...(phone && phone.trim() ? { phone: phone.trim() } : {}),
+      category: category.trim(),
       language,
       submitted_fields:
         Object.keys(submittedFields).length > 0 ? submittedFields : undefined,
