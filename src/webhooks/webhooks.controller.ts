@@ -102,6 +102,41 @@ export class WebhooksController {
       
       this.logger.log('Clean form data keys:', Object.keys(cleanFormData));
       this.logger.log('Clean form data:', JSON.stringify(cleanFormData, null, 2));
+
+      // Map specific form fields to normalized keys (attribute-by-attribute)
+      const fieldMappings: Record<string, string[]> = {
+        full_name: ['full_name', 'full-name', 'fullname', 'seller_name', 'seller-name', 'name'],
+        email: ['email', 'e-mail', 'email_address', 'email-address'],
+        phone_number: ['phone_number', 'phone-number', 'phone', 'whatsapp', 'mobile', 'tel'],
+        selling_page: ['selling_page', 'selling-page', 'main-sales-page', 'shop_url'],
+        secondarys_selling_page: [
+          'secondarys_selling_page',
+          'secondarys-selling-page',
+          'secondary-selling-page',
+          'secondary_sales_page',
+        ],
+        city: ['city', 'المدينة'],
+        products_category: ['products_category', 'products-category', 'product-category', 'category', 'categories'],
+        others: ['others', 'other-products', 'other_products'],
+        valide_product: ['valide_product', 'valid_product', 'valide-product', 'valid-product'],
+        products_type: ['products_type', 'products-type', 'product_type', 'product-type'],
+        time_selling: ['time_selling', 'time-selling', 'selling_duration', 'selling-duration'],
+        feedbacks: ['feedbacks', 'customer-feedback', 'customer_feedback'],
+        return_policies: ['return_policies', 'return-policies', 'return_handling', 'return-handling'],
+        fake_orders: ['fake_orders', 'fake-orders', 'fake_orders_experience', 'fake-orders-experience'],
+      };
+
+      const mappedFormData: Record<string, any> = {};
+      Object.entries(fieldMappings).forEach(([targetKey, variants]) => {
+        for (const variant of variants) {
+          if (cleanFormData[variant] !== undefined) {
+            mappedFormData[targetKey] = cleanFormData[variant];
+            break;
+          }
+        }
+      });
+
+      this.logger.log('Mapped form data (normalized):', JSON.stringify(mappedFormData, null, 2));
       
       // If still empty, log detailed info and return error
       if (!cleanFormData || Object.keys(cleanFormData).length === 0) {
@@ -126,7 +161,10 @@ export class WebhooksController {
       const webhookDto: WebflowWebhookDto = {
         name: parsedBody.name || parsedBody.formName || 'Application form',
         site: parsedBody.site || req.headers['x-webflow-site'] || req.headers['webflow-site'] || '',
-        data: cleanFormData,
+        data: {
+          ...cleanFormData,
+          ...mappedFormData,
+        },
         submittedAt: parsedBody.submittedAt || parsedBody.createdOn || new Date().toISOString(),
       };
       
