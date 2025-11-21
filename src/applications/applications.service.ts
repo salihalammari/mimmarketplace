@@ -115,37 +115,67 @@ export class ApplicationsService {
       throw new Error('Invalid email format');
     }
 
+    const sellingPage = getString('selling_page', 'selling-page', 'main-sales-page', 'shop_url');
+    const secondarySellingPage = getString('secondarys_selling_page', 'secondarys-selling-page', 'secondary-selling-page', 'secondary_selling_page');
+    const cityValue = getString('city', 'المدينة');
+    const otherProducts = getString('others', 'other-products', 'other_products');
+    const validProduct = getBoolean('valide_product', 'valide-product', 'valid-product', 'valid_product');
+    const productsType = getString('products_type', 'products-type', 'product-type', 'product_type');
+    const timeSelling = getString('time_selling', 'time-selling', 'selling-duration', 'selling_duration');
+    const customerFeedback = getString('feedbacks', 'customer-feedback', 'customer_feedback');
+    const returnPolicies = getString('return_policies', 'return-policies', 'return-handling', 'return_handling');
+    const fakeOrders = getString('fake_orders', 'fake-orders', 'fake-orders-experience', 'fake_orders_experience');
+    const badgeUsageLocations = getArray(
+      'badge_use',
+      'badge-use',
+      'badge_usage',
+      'badge-usage',
+      'badge_usage_locations',
+      'preferred-badge-use',
+      'preferred_badge_use',
+    );
+    const deliveryDuration = getString('delivery_duration', 'delivery-duration', 'shipping-time', 'shipping_time');
+    const deliveryZone = getString('delivery_zone', 'delivery-zone', 'delivery-area', 'delivery_area');
+    const whatsappNumber = getString('whatsapp', 'phone_number', 'phone-number');
+    const instagramHandle = getString('instagram', 'instagram-link');
+    const facebookHandle = getString('facebook', 'facebook-link');
+    const tiktokHandle = getString('tiktok');
+
     // Map all fields from Webflow form to database structure
     const submittedFields: Record<string, any> = {
       // Main fields
-      sellingPage: getString('selling_page', 'selling-page', 'main-sales-page'),
-      secondarySellingPage: getString('secondarys_selling_page', 'secondarys-selling-page', 'secondary-selling-page', 'secondary_selling_page'),
-      city: getString('city', 'المدينة'),
+      sellingPage,
+      secondarySellingPage,
+      city: cityValue,
       productsCategory: categoryFromForm.length > 0 ? categoryFromForm : getString('products_category', 'products-category'),
-      otherProducts: getString('others', 'other-products'),
-      validProduct: getBoolean('valide_product', 'valide-product', 'valid-product', 'valid_product'),
-      productsType: getString('products_type', 'products-type', 'product-type', 'product_type'),
-      timeSelling: getString('time_selling', 'time-selling', 'selling-duration', 'selling_duration'),
-      feedbacks: getString('feedbacks', 'customer-feedback', 'customer_feedback'),
-      returnPolicies: getString('return_policies', 'return-policies', 'return-handling', 'return_handling'),
-      fakeOrders: getString('fake_orders', 'fake-orders', 'fake-orders-experience', 'fake_orders_experience'),
+      otherProducts,
+      validProduct,
+      productsType,
+      timeSelling,
+      feedbacks: customerFeedback,
+      returnPolicies,
+      fakeOrders,
+      badgeUsageLocations,
+      preferredBadgeUse: badgeUsageLocations.length ? badgeUsageLocations.join(', ') : undefined,
+      deliveryDuration,
+      deliveryZone,
       
       // Additional fields (for backward compatibility)
-      mainSalesPageLink: getString('selling_page', 'selling-page', 'main-sales-page'),
-      secondarySalesPageLink: getString('secondarys_selling_page', 'secondarys-selling-page', 'secondary-selling-page'),
+      mainSalesPageLink: sellingPage,
+      secondarySalesPageLink: secondarySellingPage,
       salesCategories: categoryFromForm,
       productsAndBrand: getString('products_category', 'products-category'),
-      sellingDuration: getString('time_selling', 'time-selling', 'selling-duration'),
-      customerFeedback: getString('feedbacks', 'customer-feedback'),
-      returnHandling: getString('return_policies', 'return-policies', 'return-handling'),
-      fakeOrdersExperience: getString('fake_orders', 'fake-orders'),
-      productType: getString('products_type', 'products-type'),
+      sellingDuration: timeSelling,
+      customerFeedback,
+      returnHandling: returnPolicies,
+      fakeOrdersExperience: fakeOrders,
+      productType: productsType,
       
       // Optional fields that might exist
-      whatsappNumber: getString('whatsapp', 'phone_number', 'phone-number'),
-      instagramHandle: getString('instagram', 'instagram-link'),
-      facebookHandle: getString('facebook', 'facebook-link'),
-      tiktokHandle: getString('tiktok'),
+      whatsappNumber,
+      instagramHandle,
+      facebookHandle,
+      tiktokHandle,
       additionalNotes: getString('notes', 'message'),
     };
 
@@ -168,6 +198,23 @@ export class ApplicationsService {
       ...(phone && phone.trim() ? { phone: phone.trim() } : {}),
       category: category.trim(),
       language,
+      selling_page: sellingPage,
+      secondary_selling_page: secondarySellingPage,
+      city: cityValue,
+      other_products: otherProducts,
+      valid_product: validProduct,
+      products_type: productsType,
+      time_selling: timeSelling,
+      feedbacks: customerFeedback,
+      return_policies: returnPolicies,
+      fake_orders: fakeOrders,
+      badge_use: badgeUsageLocations.length ? badgeUsageLocations : undefined,
+      delivery_duration: deliveryDuration,
+      delivery_zone: deliveryZone,
+      whatsapp_number: whatsappNumber,
+      instagram_handle: instagramHandle,
+      facebook_handle: facebookHandle,
+      tiktok_handle: tiktokHandle,
       submitted_fields:
         Object.keys(submittedFields).length > 0 ? submittedFields : undefined,
     };

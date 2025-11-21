@@ -56,6 +56,11 @@ export class WebhooksController {
           }
         });
       }
+      // Handle nested data format with payload (Webflow API V2 format)
+      else if (parsedBody?.data?.payload?.data && typeof parsedBody.data.payload.data === 'object') {
+        this.logger.log('Using nested payload.data format');
+        formData = parsedBody.data.payload.data;
+      }
       // Handle nested data format
       else if (parsedBody?.data && typeof parsedBody.data === 'object') {
         this.logger.log('Using nested data field');
@@ -71,7 +76,9 @@ export class WebhooksController {
       const metadataFields = [
         'name', 'site', 'submittedAt', 'formId', 'formName', 
         'form', 'id', 'createdOn', 'updatedOn', 'archived',
-        'draft', 'test', 'lastPublished', 'lastUpdated'
+        'draft', 'test', 'lastPublished', 'lastUpdated',
+        'triggerType', 'payload', 'siteId', 'formElementId',
+        'pageId', 'publishedPath', 'pageUrl', 'schema'
       ];
       
       const cleanFormData: Record<string, any> = {};
