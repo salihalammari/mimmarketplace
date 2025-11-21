@@ -439,6 +439,9 @@
       : (window.location.origin.includes('localhost') 
           ? 'http://localhost:3000' 
           : 'https://mimmarketplace.onrender.com');
+    
+    console.log('Dashboard loaded. API_URL:', API_URL);
+    console.log('Current origin:', window.location.origin);
     let currentStatusFilter = '';
     let selectedBadgeLevel = 1;
 
@@ -514,12 +517,22 @@
           ? `${API_URL}/applications?status=${currentStatusFilter}`
           : `${API_URL}/applications`;
         
+        console.log('Fetching applications from:', url);
         const response = await fetch(url);
+        console.log('Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const applications = await response.json();
+        console.log('Applications received:', applications);
+        console.log('Number of applications:', applications.length);
 
         loading.style.display = 'none';
 
         if (applications.length === 0) {
+          console.log('No applications found');
           emptyState.style.display = 'block';
           return;
         }
@@ -561,9 +574,13 @@
         }).join('');
 
         table.style.display = 'table';
+        console.log('Applications table displayed successfully');
       } catch (error) {
         console.error('Error loading applications:', error);
-        loading.textContent = 'Error loading applications';
+        console.error('Error details:', error.message, error.stack);
+        loading.textContent = `Error loading applications: ${error.message}`;
+        emptyState.style.display = 'block';
+        emptyState.textContent = `Error: ${error.message}. Check console for details.`;
       }
     }
 
