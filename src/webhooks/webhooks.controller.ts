@@ -16,7 +16,6 @@ export class WebhooksController {
   async handleWebflowWebhook(@Body() body: any, @Req() req: Request) {
     this.logger.log('=== Webflow Webhook Received ===');
     this.logger.log('Content-Type:', req.headers['content-type']);
-    this.logger.log('Headers:', JSON.stringify(req.headers, null, 2));
     
     // Try multiple ways to get the body
     let parsedBody = body || req.body || {};
@@ -34,7 +33,18 @@ export class WebhooksController {
     this.logger.log('Body type:', typeof parsedBody);
     this.logger.log('Body is array?', Array.isArray(parsedBody));
     this.logger.log('Body keys:', parsedBody ? Object.keys(parsedBody) : 'null');
-    this.logger.log('Full body:', JSON.stringify(parsedBody, null, 2));
+    this.logger.log('Full body structure:', JSON.stringify(parsedBody, null, 2));
+    
+    // Debug: Check for nested structures
+    if (parsedBody?.data) {
+      this.logger.log('Has data property:', Object.keys(parsedBody.data));
+      if (parsedBody.data?.payload) {
+        this.logger.log('Has payload property:', Object.keys(parsedBody.data.payload));
+        if (parsedBody.data.payload?.data) {
+          this.logger.log('Has payload.data property:', Object.keys(parsedBody.data.payload.data));
+        }
+      }
+    }
     
     try {
       // Webflow API V2 can send data in multiple formats:
