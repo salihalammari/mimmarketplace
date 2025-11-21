@@ -57,14 +57,26 @@ export class WebhooksController {
         });
       }
       // Handle nested data format with payload (Webflow API V2 format)
-      else if (parsedBody?.data?.payload?.data && typeof parsedBody.data.payload.data === 'object') {
+      // Structure: { data: { payload: { data: { full_name: "...", ... } } } }
+      if (parsedBody?.data?.payload?.data && typeof parsedBody.data.payload.data === 'object') {
         this.logger.log('Using nested payload.data format');
         formData = parsedBody.data.payload.data;
       }
-      // Handle nested data format
-      else if (parsedBody?.data && typeof parsedBody.data === 'object') {
+      // Handle nested data format (direct data object)
+      else if (parsedBody?.data && typeof parsedBody.data === 'object' && !parsedBody.data.triggerType) {
         this.logger.log('Using nested data field');
         formData = parsedBody.data;
+      }
+      // Handle case where data.payload exists but we need to check deeper
+      else if (parsedBody?.data?.payload && typeof parsedBody.data.payload === 'object') {
+        this.logger.log('Checking payload object for nested data...');
+        if (parsedBody.data.payload.data && typeof parsedBody.data.payload.data === 'object') {
+          this.logger.log('Found data inside payload.data');
+          formData = parsedBody.data.payload.data;
+        } else {
+          this.logger.log('Payload does not contain data field, using payload directly');
+          formData = parsedBody.data.payload;
+        }
       }
       // Handle direct format (fields at root level)
       else if (parsedBody && typeof parsedBody === 'object') {
@@ -109,6 +121,8 @@ export class WebhooksController {
       
       this.logger.log('Clean form data keys:', Object.keys(cleanFormData));
       this.logger.log('Clean form data:', JSON.stringify(cleanFormData, null, 2));
+      this.logger.log('Form data extraction check - has full_name?', !!cleanFormData['full_name']);
+      this.logger.log('Form data extraction check - has email?', !!cleanFormData['email']);
 
       // Map specific form fields to normalized keys (attribute-by-attribute)
       const fieldMappings: Record<string, string[]> = {
