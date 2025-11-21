@@ -526,23 +526,25 @@
 
         tbody.innerHTML = applications.map(app => {
           const submittedFields = app.submitted_fields || {};
-          const shopUrl = submittedFields.mainSalesPageLink;
-          const badgeUse = submittedFields.preferredBadgeUse || (Array.isArray(submittedFields.badgeUsageLocations) 
-            ? submittedFields.badgeUsageLocations.join(', ')
-            : submittedFields.badgeUsageLocations || '-');
+          const shopUrl = app.selling_page || submittedFields.mainSalesPageLink || submittedFields.sellingPage;
+          const badgeUse = Array.isArray(app.badge_use) 
+            ? app.badge_use.join(', ')
+            : (app.badge_use || submittedFields.preferredBadgeUse || (Array.isArray(submittedFields.badgeUsageLocations) 
+              ? submittedFields.badgeUsageLocations.join(', ')
+              : submittedFields.badgeUsageLocations || '-'));
 
           return `
           <tr>
             <td><strong>${app.seller_name}</strong></td>
             <td>${app.email}</td>
             <td>${app.phone || '-'}</td>
-            <td>${submittedFields.city || '-'}</td>
+            <td>${app.city || submittedFields.city || '-'}</td>
             <td>
               ${shopUrl 
                 ? `<a href="${shopUrl}" target="_blank" style="color:#667eea;">Visit</a>` 
                 : '-'}
             </td>
-            <td>${submittedFields.sellingDuration || '-'}</td>
+            <td>${app.time_selling || submittedFields.sellingDuration || submittedFields.timeSelling || '-'}</td>
             <td>${badgeUse}</td>
             <td>${app.category}</td>
             <td><span class="status-badge status-${app.status}">${app.status.replace('_', ' ')}</span></td>
@@ -596,10 +598,88 @@
             <label>Status</label>
             <input type="text" value="${app.status}" readonly>
           </div>
-          ${submittedFields.city ? `
+          ${app.city || submittedFields.city ? `
           <div class="form-group">
             <label>City</label>
-            <input type="text" value="${submittedFields.city}" readonly>
+            <input type="text" value="${app.city || submittedFields.city}" readonly>
+          </div>
+          ` : ''}
+          ${app.products_category ? `
+          <div class="form-group">
+            <label>Products Category</label>
+            <input type="text" value="${app.products_category}" readonly>
+          </div>
+          ` : ''}
+          ${app.selling_page ? `
+          <div class="form-group">
+            <label>Main Shop URL</label>
+            <a href="${app.selling_page}" target="_blank" style="color: #667eea;">${app.selling_page}</a>
+          </div>
+          ` : ''}
+          ${app.secondary_selling_page ? `
+          <div class="form-group">
+            <label>Secondary Shop URL</label>
+            <a href="${app.secondary_selling_page}" target="_blank" style="color: #667eea;">${app.secondary_selling_page}</a>
+          </div>
+          ` : ''}
+          ${app.time_selling ? `
+          <div class="form-group">
+            <label>Time Selling</label>
+            <input type="text" value="${app.time_selling}" readonly>
+          </div>
+          ` : ''}
+          ${app.feedbacks ? `
+          <div class="form-group">
+            <label>Feedbacks</label>
+            <input type="text" value="${app.feedbacks}" readonly>
+          </div>
+          ` : ''}
+          ${app.return_policies ? `
+          <div class="form-group">
+            <label>Return Policies</label>
+            <textarea readonly>${app.return_policies}</textarea>
+          </div>
+          ` : ''}
+          ${app.fake_orders ? `
+          <div class="form-group">
+            <label>Fake Orders</label>
+            <input type="text" value="${app.fake_orders}" readonly>
+          </div>
+          ` : ''}
+          ${app.delivery_duration ? `
+          <div class="form-group">
+            <label>Delivery Duration</label>
+            <input type="text" value="${app.delivery_duration}" readonly>
+          </div>
+          ` : ''}
+          ${app.delivery_zone ? `
+          <div class="form-group">
+            <label>Delivery Zone</label>
+            <input type="text" value="${app.delivery_zone}" readonly>
+          </div>
+          ` : ''}
+          ${app.badge_use && app.badge_use.length > 0 ? `
+          <div class="form-group">
+            <label>Badge Use</label>
+            <input type="text" value="${Array.isArray(app.badge_use) ? app.badge_use.join(', ') : app.badge_use}" readonly>
+          </div>
+          ` : ''}
+          ${app.products_type ? `
+          <div class="form-group">
+            <label>Products Type</label>
+            <input type="text" value="${app.products_type}" readonly>
+          </div>
+          ` : ''}
+          ${app.other_products ? `
+          <div class="form-group">
+            <label>Other Products</label>
+            <textarea readonly>${app.other_products}</textarea>
+          </div>
+          ` : ''}
+          ${app.valid_product !== null && app.valid_product !== undefined ? `
+          <div class="form-group">
+            <label>Valid Product</label>
+            <input type="text" value="${app.valid_product ? 'Yes' : 'No'}" readonly>
           </div>
           ` : ''}
           ${submittedFields.secondarySalesPageLink ? `

@@ -35,6 +35,10 @@ export class CreateApplicationDto {
 
   @IsOptional()
   @IsString()
+  products_category?: string;
+
+  @IsOptional()
+  @IsString()
   other_products?: string;
 
   @IsOptional()

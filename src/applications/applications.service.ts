@@ -201,6 +201,7 @@ export class ApplicationsService {
       selling_page: sellingPage,
       secondary_selling_page: secondarySellingPage,
       city: cityValue,
+      products_category: categoryFromForm.length > 0 ? categoryFromForm.join(', ') : getString('products_category', 'products-category'),
       other_products: otherProducts,
       valid_product: validProduct,
       products_type: productsType,

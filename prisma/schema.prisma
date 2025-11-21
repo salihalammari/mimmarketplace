@@ -9,17 +9,18 @@ datasource db {
 }
 
 model applications {
-  id               String       @id @default(uuid())
-  email            String
-  seller_name      String
-  phone            String?
-  category         String
-  language         String
-  status           String       @default("pending")
-  submitted_fields Json?
+  id                     String       @id @default(uuid())
+  email                  String
+  seller_name            String
+  phone                  String?
+  category               String
+  language               String
+  status                 String       @default("pending")
+  submitted_fields       Json?
   selling_page           String?
   secondary_selling_page String?
   city                   String?
+  products_category      String?
   other_products         String?
   valid_product          Boolean?
   products_type          String?
@@ -27,16 +28,16 @@ model applications {
   feedbacks              String?
   return_policies        String?
   fake_orders            String?
-  badge_use              String[]?
+  badge_use              String[]
   delivery_duration      String?
   delivery_zone          String?
   whatsapp_number        String?
   instagram_handle       String?
   facebook_handle        String?
   tiktok_handle          String?
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
-  audit_logs       audit_logs[]
+  created_at             DateTime     @default(now())
+  updated_at             DateTime     @updatedAt
+  audit_logs             audit_logs[]
 }
 
 model audit_logs {
