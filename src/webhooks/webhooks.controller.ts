@@ -66,33 +66,53 @@ export class WebhooksController {
           }
         });
       }
-      // Handle nested data format with payload (Webflow API V2 format)
-      // Structure: { data: { payload: { data: { full_name: "...", ... } } } }
-      if (parsedBody?.data?.payload?.data && typeof parsedBody.data.payload.data === 'object') {
-        this.logger.log('Using nested payload.data format');
+      // PRIORITY 1: Handle nested data format with payload (Webflow API V2 format)
+      // Structure: { data: { triggerType: "...", payload: { data: { full_name: "...", ... } } } }
+      else if (parsedBody?.data?.payload?.data && typeof parsedBody.data.payload.data === 'object') {
+        this.logger.log('✅ PRIORITY 1: Using nested payload.data format - extracting from data.payload.data');
         formData = parsedBody.data.payload.data;
       }
-      // Handle nested data format (direct data object)
-      else if (parsedBody?.data && typeof parsedBody.data === 'object' && !parsedBody.data.triggerType) {
-        this.logger.log('Using nested data field');
-        formData = parsedBody.data;
-      }
-      // Handle case where data.payload exists but we need to check deeper
+      // PRIORITY 2: Handle case where we have data.payload but need to check if payload has data
       else if (parsedBody?.data?.payload && typeof parsedBody.data.payload === 'object') {
         this.logger.log('Checking payload object for nested data...');
         if (parsedBody.data.payload.data && typeof parsedBody.data.payload.data === 'object') {
-          this.logger.log('Found data inside payload.data');
+          this.logger.log('✅ PRIORITY 2: Found data inside payload.data');
           formData = parsedBody.data.payload.data;
         } else {
-          this.logger.log('Payload does not contain data field, using payload directly');
+          this.logger.log('⚠️ Payload does not contain data field, using payload directly');
           formData = parsedBody.data.payload;
         }
       }
-      // Handle direct format (fields at root level)
+      // PRIORITY 3: Handle nested data format (direct data object) - but skip if it has triggerType/payload
+      else if (parsedBody?.data && typeof parsedBody.data === 'object') {
+        // If data contains triggerType or payload, it's not the form data itself - go deeper
+        if (parsedBody.data.triggerType || parsedBody.data.payload) {
+          this.logger.log('⚠️ Data contains triggerType/payload, trying to extract from payload.data');
+          // Try to extract from payload.data if it exists
+          if (parsedBody.data.payload?.data && typeof parsedBody.data.payload.data === 'object') {
+            this.logger.log('✅ PRIORITY 3: Extracting from data.payload.data');
+            formData = parsedBody.data.payload.data;
+          } else {
+            this.logger.error('❌ Cannot find form data in nested structure');
+            this.logger.error('Available keys in data:', Object.keys(parsedBody.data));
+            if (parsedBody.data.payload) {
+              this.logger.error('Available keys in payload:', Object.keys(parsedBody.data.payload));
+            }
+            formData = {};
+          }
+        } else {
+          this.logger.log('Using nested data field (direct)');
+          formData = parsedBody.data;
+        }
+      }
+      // PRIORITY 4: Handle direct format (fields at root level)
       else if (parsedBody && typeof parsedBody === 'object') {
         this.logger.log('Using direct body format');
         formData = { ...parsedBody };
       }
+      
+      this.logger.log('Extracted formData keys:', Object.keys(formData));
+      this.logger.log('Extracted formData sample:', JSON.stringify(Object.fromEntries(Object.entries(formData).slice(0, 3)), null, 2));
       
       // Remove metadata fields that Webflow might send
       const metadataFields = [
