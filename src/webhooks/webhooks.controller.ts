@@ -89,8 +89,9 @@ export class WebhooksController {
       }
       // PRIORITY 1: Handle case where parsedBody IS the data object with triggerType and payload
       // Structure: { triggerType: "...", payload: { data: { full_name: "...", ... } } }
-      else if (parsedBody?.triggerType && parsedBody?.payload?.data && typeof parsedBody.payload.data === 'object') {
+      else if (parsedBody && typeof parsedBody === 'object' && parsedBody.triggerType && parsedBody.payload && parsedBody.payload.data && typeof parsedBody.payload.data === 'object') {
         this.logger.log('✅ PRIORITY 1: Body is data object, extracting from payload.data');
+        this.logger.log('Payload.data keys:', Object.keys(parsedBody.payload.data));
         formData = parsedBody.payload.data;
       }
       // PRIORITY 2: Handle nested data format with payload (Webflow API V2 format)
