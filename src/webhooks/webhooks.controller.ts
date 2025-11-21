@@ -36,15 +36,36 @@ export class WebhooksController {
     this.logger.log('Full body structure:', JSON.stringify(parsedBody, null, 2));
     
     // Debug: Check for nested structures
-    if (parsedBody?.data) {
-      this.logger.log('Has data property:', Object.keys(parsedBody.data));
-      if (parsedBody.data?.payload) {
-        this.logger.log('Has payload property:', Object.keys(parsedBody.data.payload));
-        if (parsedBody.data.payload?.data) {
-          this.logger.log('Has payload.data property:', Object.keys(parsedBody.data.payload.data));
+    this.logger.log('=== DEBUGGING BODY STRUCTURE ===');
+    this.logger.log('parsedBody has triggerType?', !!parsedBody?.triggerType);
+    this.logger.log('parsedBody has payload?', !!parsedBody?.payload);
+    this.logger.log('parsedBody has data?', !!parsedBody?.data);
+    
+    if (parsedBody?.triggerType) {
+      this.logger.log('✅ parsedBody IS the data object with triggerType');
+      this.logger.log('parsedBody.payload exists?', !!parsedBody?.payload);
+      if (parsedBody?.payload) {
+        this.logger.log('parsedBody.payload keys:', Object.keys(parsedBody.payload));
+        this.logger.log('parsedBody.payload.data exists?', !!parsedBody?.payload?.data);
+        if (parsedBody?.payload?.data) {
+          this.logger.log('✅ parsedBody.payload.data keys:', Object.keys(parsedBody.payload.data));
         }
       }
     }
+    
+    if (parsedBody?.data) {
+      this.logger.log('parsedBody.data keys:', Object.keys(parsedBody.data));
+      if (parsedBody.data?.triggerType) {
+        this.logger.log('✅ parsedBody.data has triggerType');
+      }
+      if (parsedBody.data?.payload) {
+        this.logger.log('parsedBody.data.payload keys:', Object.keys(parsedBody.data.payload));
+        if (parsedBody.data.payload?.data) {
+          this.logger.log('✅ parsedBody.data.payload.data keys:', Object.keys(parsedBody.data.payload.data));
+        }
+      }
+    }
+    this.logger.log('=== END DEBUGGING ===');
     
     try {
       // Webflow API V2 can send data in multiple formats:
