@@ -209,7 +209,7 @@ export class ApplicationsService {
       feedbacks: customerFeedback,
       return_policies: returnPolicies,
       fake_orders: fakeOrders,
-      badge_use: badgeUsageLocations.length ? badgeUsageLocations : undefined,
+      badge_use: badgeUsageLocations.length > 0 ? badgeUsageLocations : [],
       delivery_duration: deliveryDuration,
       delivery_zone: deliveryZone,
       whatsapp_number: whatsappNumber,
