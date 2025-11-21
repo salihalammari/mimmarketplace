@@ -11,7 +11,7 @@ datasource db {
 model applications {
   id                     String       @id @default(uuid())
   email                  String
-  full_name          String
+  seller_name            String
   phone                  String?
   category               String
   language               String
