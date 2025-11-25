@@ -97,7 +97,7 @@ Admin dashboard displays new application
 ```sql
 applications
 ├── id (UUID)
-├── seller_name
+├── full_name
 ├── email
 ├── phone
 ├── category

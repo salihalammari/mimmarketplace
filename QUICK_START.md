@@ -18,7 +18,7 @@ curl https://mimmarketplace.onrender.com/health
 curl -X POST https://mimmarketplace.onrender.com/applications \
   -H "Content-Type: application/json" \
   -d '{
-    "seller_name": "John Doe",
+    "full_name": "John Doe",
     "email": "john@example.com",
     "category": "electronics",
     "language": "en",
@@ -31,8 +31,8 @@ curl -X POST https://mimmarketplace.onrender.com/applications \
 fetch('https://mimmarketplace.onrender.com/applications', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    seller_name: 'John Doe',
+body: JSON.stringify({
+    full_name: 'John Doe',
     email: 'john@example.com',
     category: 'electronics',
     language: 'en'
@@ -69,7 +69,7 @@ https://mimmarketplace.onrender.com/webhooks/webflow
 
 ## ✅ Required Fields
 
-- `seller_name` (string)
+- `full_name` (string)
 - `email` (string, valid email)
 - `category` (string)
 - `language` (string: "en" or "ar")
@@ -85,7 +85,7 @@ https://mimmarketplace.onrender.com/webhooks/webflow
 ```json
 {
   "id": "uuid-here",
-  "seller_name": "John Doe",
+  "full_name": "John Doe",
   "email": "john@example.com",
   "category": "electronics",
   "language": "en",

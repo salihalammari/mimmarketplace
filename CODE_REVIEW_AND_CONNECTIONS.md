@@ -4,10 +4,10 @@
 
 ### 1. **Critical Schema Mismatch - FIXED**
 - **Problem**: Schema had `full_name` but code used `seller_name`
-- **Fixed**: Changed schema to use `seller_name` to match DTO, service, and dashboard
+- **Fixed**: Changed schema (and all consumers) to use `full_name` consistently across DTO, service, and dashboard
 - **Files Changed**:
-  - `prisma/schema.prisma` - Changed `full_name` → `seller_name`
-  - `admin-dashboard/index.html` - Fixed detail modal to use `seller_name`
+  - `prisma/schema.prisma` - Restored `seller_name` → `full_name`
+  - `admin-dashboard/index.html` - Updated detail modal/table to use `full_name`
 
 ### 2. **Webhook Data Extraction - FIXED**
 - **Problem**: Webhook was extracting `{ triggerType, payload }` instead of form fields from `payload.data`
@@ -48,13 +48,13 @@
 ### 3. **Webhooks Service → Applications Service**
 **File**: `src/applications/applications.service.ts`
 - ✅ Extracts and normalizes form fields
-- ✅ Validates required fields (`seller_name`, `email`)
+- ✅ Validates required fields (`full_name`, `email`)
 - ✅ Maps all fields to database structure
 - ✅ Creates `CreateApplicationDto`
 - ✅ Saves to database via Prisma
 
 **Field Mappings**:
-- `full_name` → `seller_name`
+- `full_name` → `full_name`
 - `phone_number` → `phone`
 - `selling_page` → `selling_page`
 - `secondarys_selling_page` → `secondary_selling_page`
@@ -72,7 +72,7 @@
 **File**: `prisma/schema.prisma`
 - ✅ Schema matches DTO structure
 - ✅ All fields properly typed
-- ✅ Required fields: `seller_name`, `email`, `category`, `language`
+- ✅ Required fields: `full_name`, `email`, `category`, `language`
 - ✅ Optional fields: All other fields
 
 **Database Fields**:
@@ -80,7 +80,7 @@
 model applications {
   id                     String       @id @default(uuid())
   email                  String       // Required
-  seller_name            String       // Required
+  full_name              String       // Required
   phone                  String?      // Optional
   category               String       // Required
   language               String       // Required
@@ -126,7 +126,7 @@ model applications {
 - ✅ Creates badges via API
 
 **Dashboard Fields Displayed**:
-- Table: `seller_name`, `email`, `phone`, `city`, `selling_page`, `time_selling`, `badge_use`, `category`, `status`
+- Table: `full_name`, `email`, `phone`, `city`, `selling_page`, `time_selling`, `badge_use`, `category`, `status`
 - Details Modal: All fields from database + `submitted_fields` JSON
 
 ## 🔍 Connection Points Verified
@@ -159,8 +159,8 @@ model applications {
 
 ### Issue 2: Schema Mismatch (FIXED)
 - **Symptom**: Database errors when saving
-- **Cause**: Schema had `full_name` but code used `seller_name`
-- **Fix**: Changed schema to use `seller_name`
+- **Cause**: Schema had `full_name` but portions of the code used `seller_name`
+- **Fix**: Changed schema and code to use `full_name`
 - **Status**: ✅ Fixed
 
 ## 📝 Next Steps

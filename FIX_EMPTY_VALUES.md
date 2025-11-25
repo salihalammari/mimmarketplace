@@ -1,7 +1,7 @@
 # Fix for Empty Values in Database
 
 ## Problem
-Some applications were being saved with empty values (`EMPTY` or `NULL`) for required fields like `seller_name` and `email`.
+Some applications were being saved with empty values (`EMPTY` or `NULL`) for required fields like `full_name` and `email`.
 
 ## Root Causes
 
@@ -56,14 +56,14 @@ else if (parsedBody && typeof parsedBody === 'object') {
 **Key Changes:**
 ```typescript
 // More field name variations
-const sellerName = getString(
+const fullName = getString(
   'full-name', 'full_name', 'full name', 'fullname',
   'الاسم-الكامل', 'الاسم الكامل', 'name', 'seller-name', 'seller_name'
 );
 
 // Validation for required fields
-if (!sellerName || !sellerName.trim()) {
-  throw new Error('Missing required field: seller name (full-name)');
+if (!fullName || !fullName.trim()) {
+  throw new Error('Missing required field: full_name');
 }
 if (!email || !email.trim()) {
   throw new Error('Missing required field: email');
@@ -74,7 +74,7 @@ if (!email.includes('@')) {
 
 // Only include phone if it has a value
 const applicationData: CreateApplicationDto = {
-  seller_name: sellerName.trim(),
+  full_name: fullName.trim(),
   email: email.trim().toLowerCase(),
   ...(phone && phone.trim() ? { phone: phone.trim() } : {}),
   category: category.trim(),

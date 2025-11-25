@@ -52,7 +52,7 @@ fetch('https://mimmarketplace.onrender.com/applications', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    seller_name: 'Test Seller',
+    full_name: 'Test Seller',
     email: 'test@example.com',
     category: 'electronics',
     language: 'ar'
@@ -139,7 +139,7 @@ curl -X POST https://mimmarketplace.onrender.com/webhooks/webflow/test \
 # Test direct API
 curl -X POST https://mimmarketplace.onrender.com/applications \
   -H "Content-Type: application/json" \
-  -d '{"seller_name":"Test","email":"test@test.com","category":"test","language":"en"}'
+  -d '{"full_name":"Test","email":"test@test.com","category":"test","language":"en"}'
 
 # Get all applications
 curl https://mimmarketplace.onrender.com/applications

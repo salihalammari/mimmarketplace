@@ -99,7 +99,7 @@ https://api.render.com/deploy/...
 
 **Check:**
 1. Database connection (check Render logs)
-2. Required fields are present (seller_name, email, category, language)
+2. Required fields are present (full_name, email, category, language)
 3. Check for validation errors in logs
 
 ## Debugging Steps
@@ -151,7 +151,7 @@ curl https://mimmarketplace.onrender.com/webhooks/webflow/test
 curl -X POST https://mimmarketplace.onrender.com/applications \
   -H "Content-Type: application/json" \
   -d '{
-    "seller_name": "Direct Test",
+    "full_name": "Direct Test",
     "email": "direct@test.com",
     "category": "test",
     "language": "en"

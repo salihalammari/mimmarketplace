@@ -81,7 +81,7 @@ async function verifyCompleteFlow() {
     const application = await appRes.json();
     
     console.log('   ✅ Application saved to database');
-    console.log(`   ✅ Seller Name: ${application.seller_name}`);
+    console.log(`   ✅ Full Name: ${application.full_name}`);
     console.log(`   ✅ Email: ${application.email}`);
     console.log(`   ✅ Status: ${application.status}`);
     console.log(`   ✅ Category: ${application.category}`);
@@ -91,7 +91,7 @@ async function verifyCompleteFlow() {
     if (application.email !== formData.data.email) {
       throw new Error('Email mismatch - data integrity issue');
     }
-    if (application.seller_name !== formData.data['full-name']) {
+    if (application.full_name !== formData.data['full-name']) {
       throw new Error('Name mismatch - data integrity issue');
     }
     console.log('   ✅ Data integrity verified');

@@ -47,7 +47,7 @@ async function testFullFlow() {
       if (appRes.ok) {
         const application = await appRes.json();
         console.log('✅ Application found in database');
-        console.log(`   Name: ${application.seller_name}`);
+        console.log(`   Full Name: ${application.full_name}`);
         console.log(`   Email: ${application.email}`);
         console.log(`   Status: ${application.status}`);
         console.log(`   Category: ${application.category}`);

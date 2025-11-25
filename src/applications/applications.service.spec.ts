@@ -33,7 +33,7 @@ describe('ApplicationsService (integration)', () => {
   it('should persist application data in the database', async () => {
     const timestamp = Date.now();
     const createDto: CreateApplicationDto = {
-      seller_name: 'Test User',
+      full_name: 'Test User',
       email: `test.user.${timestamp}@example.com`,
       phone: '+212612345678',
       category: 'electronics',
@@ -58,7 +58,7 @@ describe('ApplicationsService (integration)', () => {
     createdApplicationId = created.id;
 
     expect(created).toMatchObject({
-      seller_name: createDto.seller_name,
+      full_name: createDto.full_name,
       email: createDto.email,
       phone: createDto.phone,
       category: createDto.category,
@@ -73,7 +73,7 @@ describe('ApplicationsService (integration)', () => {
 
     expect(persisted).not.toBeNull();
     expect(persisted).toMatchObject({
-      seller_name: createDto.seller_name,
+      full_name: createDto.full_name,
       email: createDto.email,
       phone: createDto.phone,
       category: createDto.category,

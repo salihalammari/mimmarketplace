@@ -80,7 +80,7 @@ export class ApplicationsService {
     };
 
     // Extract required fields - using exact Webflow form field names
-    const sellerName = getString(
+    const fullName = getString(
       'full_name', 'full-name', 'full name', 'fullname',
       'الاسم-الكامل', 'الاسم الكامل', 'name', 'seller-name', 'seller_name'
     );
@@ -105,8 +105,8 @@ export class ApplicationsService {
       (webhookData.site?.includes('.ma') ? 'ar' : 'en');
     
     // Validate required fields
-    if (!sellerName || !sellerName.trim()) {
-      throw new Error('Missing required field: seller name (full_name)');
+    if (!fullName || !fullName.trim()) {
+      throw new Error('Missing required field: full_name');
     }
     if (!email || !email.trim()) {
       throw new Error('Missing required field: email');
@@ -193,7 +193,7 @@ export class ApplicationsService {
 
     // Only include phone if it has a value
     const applicationData: CreateApplicationDto = {
-      seller_name: sellerName.trim(),
+      full_name: fullName.trim(),
       email: email.trim().toLowerCase(),
       ...(phone && phone.trim() ? { phone: phone.trim() } : {}),
       category: category.trim(),
@@ -221,7 +221,7 @@ export class ApplicationsService {
     };
 
     console.log('=== Application Data to Save ===');
-    console.log('Core fields:', { seller_name: sellerName, email, phone, category, language });
+    console.log('Core fields:', { full_name: fullName, email, phone, category, language });
     console.log('Submitted fields count:', Object.keys(submittedFields).length);
     console.log('Submitted fields:', JSON.stringify(submittedFields, null, 2));
 

@@ -97,7 +97,7 @@ async function checkWebflowConnection() {
       console.log(`✅ Database accessible - Found ${apps.length} total application(s)`);
       if (apps.length > 0) {
         const latest = apps[0];
-        console.log(`   Latest application: ${latest.seller_name} (${latest.email})`);
+        console.log(`   Latest application: ${latest.full_name} (${latest.email})`);
         console.log(`   Status: ${latest.status}`);
       }
     }

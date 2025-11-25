@@ -126,7 +126,7 @@ This endpoint creates an application directly (not from Webflow).
 curl -X POST https://mimmarketplace.onrender.com/applications \
   -H "Content-Type: application/json" \
   -d '{
-    "seller_name": "Ahmed Benali",
+    "full_name": "Ahmed Benali",
     "email": "ahmed.benali@example.com",
     "phone": "+212612345678",
     "category": "Electronics",
@@ -155,7 +155,7 @@ fetch('https://mimmarketplace.onrender.com/applications', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    seller_name: "Ahmed Benali",
+    full_name: "Ahmed Benali",
     email: "ahmed.benali@example.com",
     phone: "+212612345678",
     category: "Electronics",
@@ -184,7 +184,7 @@ fetch('https://mimmarketplace.onrender.com/applications', {
 ```json
 {
   "id": "uuid-here",
-  "seller_name": "Ahmed Benali",
+  "full_name": "Ahmed Benali",
   "email": "ahmed.benali@example.com",
   "phone": "+212612345678",
   "category": "Electronics",
@@ -238,7 +238,7 @@ curl -X POST https://mimmarketplace.onrender.com/webhooks/webflow/test \
 ## Field Mapping Reference
 
 ### Required Fields (for /webhooks/webflow)
-- `full_name` → `seller_name` (database)
+- `full_name` → `full_name` (database)
 - `email` → `email` (database)
 - `products_category` → `category` (database)
 

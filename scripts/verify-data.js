@@ -12,7 +12,7 @@ async function verifyData() {
     applications.forEach((app, index) => {
       console.log(`Application ${index + 1}:`);
       console.log(`  ID: ${app.id}`);
-      console.log(`  Seller Name: ${app.seller_name}`);
+      console.log(`  Full Name: ${app.full_name}`);
       console.log(`  Email: ${app.email}`);
       console.log(`  Category: ${app.category}`);
       console.log(`  Language: ${app.language}`);

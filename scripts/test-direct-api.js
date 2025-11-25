@@ -5,7 +5,7 @@ async function testDirectAPI() {
   console.log('Testing direct API endpoint...\n');
 
   const testData = {
-    seller_name: 'Direct API Test',
+    full_name: 'Direct API Test',
     email: `direct.${Date.now()}@test.com`,
     phone: '+212612345678',
     category: 'electronics',
@@ -28,7 +28,7 @@ async function testDirectAPI() {
       const result = await response.json();
       console.log('✅ Application created successfully!');
       console.log('Application ID:', result.id);
-      console.log('Seller Name:', result.seller_name);
+      console.log('Full Name:', result.full_name);
       console.log('Email:', result.email);
       
       console.log('\n2. Verifying data was saved...');
@@ -59,7 +59,7 @@ async function testDirectAPI() {
     if (apps.length > 0) {
       console.log('\nLatest 3 applications:');
       apps.slice(0, 3).forEach((app, i) => {
-        console.log(`${i + 1}. ${app.seller_name} - ${app.email} - ${app.status} - ${new Date(app.created_at).toLocaleString()}`);
+        console.log(`${i + 1}. ${app.full_name} - ${app.email} - ${app.status} - ${new Date(app.created_at).toLocaleString()}`);
       });
     }
   } catch (error) {

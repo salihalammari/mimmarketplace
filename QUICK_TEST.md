@@ -87,7 +87,7 @@ fetch('https://mimmarketplace.onrender.com/applications', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    seller_name: 'Test Seller',
+    full_name: 'Test Seller',
     email: 'test@example.com',
     category: 'electronics',
     language: 'ar',
@@ -107,7 +107,7 @@ fetch('https://mimmarketplace.onrender.com/applications')
 .then(apps => {
   console.log(`Found ${apps.length} applications`);
   apps.forEach(app => {
-    console.log(`${app.seller_name} - ${app.email} - ${app.status}`);
+    console.log(`${app.full_name} - ${app.email} - ${app.status}`);
   });
 });
 ```

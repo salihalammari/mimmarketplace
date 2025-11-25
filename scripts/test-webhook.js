@@ -55,7 +55,7 @@ async function testWebhook() {
       if (createdApp) {
         console.log('✅ Application saved to database!');
         console.log('Application ID:', createdApp.id);
-        console.log('Seller Name:', createdApp.seller_name);
+        console.log('Full Name:', createdApp.full_name);
         console.log('Email:', createdApp.email);
       } else {
         console.log('⚠️ Application not found in database');
@@ -76,7 +76,7 @@ async function testWebhook() {
     if (apps.length > 0) {
       console.log('Latest application:', {
         id: apps[0].id,
-        seller_name: apps[0].seller_name,
+        full_name: apps[0].full_name,
         email: apps[0].email,
         status: apps[0].status,
         created_at: apps[0].created_at,

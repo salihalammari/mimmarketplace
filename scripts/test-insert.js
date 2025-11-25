@@ -5,7 +5,7 @@ async function testInsert() {
   try {
     const timestamp = Date.now();
     const testData = {
-      seller_name: 'Test User',
+      full_name: 'Test User',
       email: `test.user.${timestamp}@example.com`,
       phone: '+212612345678',
       category: 'electronics',
@@ -34,7 +34,7 @@ async function testInsert() {
     console.log('✅ Data inserted successfully!');
     console.log('\nCreated Application:');
     console.log(`  ID: ${created.id}`);
-    console.log(`  Seller Name: ${created.seller_name}`);
+    console.log(`  Full Name: ${created.full_name}`);
     console.log(`  Email: ${created.email}`);
     console.log(`  Phone: ${created.phone}`);
     console.log(`  Category: ${created.category}`);
@@ -51,7 +51,7 @@ async function testInsert() {
 
     if (retrieved) {
       console.log('✅ Data successfully retrieved from database!');
-      console.log(`  Retrieved Seller Name: ${retrieved.seller_name}`);
+      console.log(`  Retrieved Full Name: ${retrieved.full_name}`);
       console.log(`  Retrieved Email: ${retrieved.email}`);
     } else {
       console.log('❌ Data not found in database!');

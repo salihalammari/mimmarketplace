@@ -132,7 +132,7 @@ https://mimmarketplace.onrender.com
 </head>
 <body>
   <form id="applicationForm">
-    <input type="text" name="seller_name" placeholder="Seller Name" required />
+    <input type="text" name="full_name" placeholder="Full Name" required />
     <input type="email" name="email" placeholder="Email" required />
     <input type="tel" name="phone" placeholder="Phone" />
     <input type="text" name="category" placeholder="Category" required />
@@ -152,7 +152,7 @@ https://mimmarketplace.onrender.com
       
       const formData = new FormData(form);
       const data = {
-        seller_name: formData.get('seller_name'),
+        full_name: formData.get('full_name'),
         email: formData.get('email'),
         phone: formData.get('phone'),
         category: formData.get('category'),
@@ -229,7 +229,7 @@ const API_URL = 'https://mimmarketplace.onrender.com';
 
 function ApplicationForm() {
   const [formData, setFormData] = useState({
-    seller_name: '',
+    full_name: '',
     email: '',
     phone: '',
     category: '',
@@ -256,7 +256,7 @@ function ApplicationForm() {
       const response = await axios.post(`${API_URL}/applications`, formData);
       setMessage(`Success! Application ID: ${response.data.id}`);
       setFormData({
-        seller_name: '',
+        full_name: '',
         email: '',
         phone: '',
         category: '',
@@ -274,10 +274,10 @@ function ApplicationForm() {
     <form onSubmit={handleSubmit}>
       <input
         type="text"
-        name="seller_name"
-        value={formData.seller_name}
+        name="full_name"
+        value={formData.full_name}
         onChange={handleChange}
-        placeholder="Seller Name"
+        placeholder="Full Name"
         required
       />
       <input
@@ -367,7 +367,7 @@ function ApplicationsList() {
     <div>
       {applications.map(app => (
         <div key={app.id}>
-          <h3>{app.seller_name}</h3>
+          <h3>{app.full_name}</h3>
           <p>{app.email}</p>
           <p>Status: {app.status}</p>
         </div>
@@ -393,9 +393,9 @@ npm install axios
 <template>
   <form @submit.prevent="submitApplication">
     <input
-      v-model="formData.seller_name"
+      v-model="formData.full_name"
       type="text"
-      placeholder="Seller Name"
+      placeholder="Full Name"
       required
     />
     <input
@@ -437,7 +437,7 @@ export default {
   data() {
     return {
       formData: {
-        seller_name: '',
+        full_name: '',
         email: '',
         phone: '',
         category: '',
@@ -457,7 +457,7 @@ export default {
         const response = await axios.post(`${API_URL}/applications`, this.formData);
         this.message = `Success! Application ID: ${response.data.id}`;
         this.formData = {
-          seller_name: '',
+          full_name: '',
           email: '',
           phone: '',
           category: '',
@@ -491,7 +491,7 @@ const API_URL = 'https://mimmarketplace.onrender.com';
 
 export interface Application {
   id?: string;
-  seller_name: string;
+  full_name: string;
   email: string;
   phone?: string;
   category: string;
@@ -540,7 +540,7 @@ import { ApplicationService, Application } from './application.service';
   selector: 'app-application-form',
   template: `
     <form (ngSubmit)="onSubmit()">
-      <input [(ngModel)]="application.seller_name" name="seller_name" placeholder="Seller Name" required />
+      <input [(ngModel)]="application.full_name" name="full_name" placeholder="Full Name" required />
       <input [(ngModel)]="application.email" name="email" type="email" placeholder="Email" required />
       <input [(ngModel)]="application.phone" name="phone" type="tel" placeholder="Phone" />
       <input [(ngModel)]="application.category" name="category" placeholder="Category" required />
@@ -559,7 +559,7 @@ import { ApplicationService, Application } from './application.service';
 })
 export class ApplicationFormComponent {
   application: Application = {
-    seller_name: '',
+    full_name: '',
     email: '',
     phone: '',
     category: '',
@@ -578,7 +578,7 @@ export class ApplicationFormComponent {
       next: (result) => {
         this.message = `Success! Application ID: ${result.id}`;
         this.application = {
-          seller_name: '',
+          full_name: '',
           email: '',
           phone: '',
           category: '',
@@ -648,7 +648,7 @@ import { useState } from 'react';
 
 export default function ApplicationForm() {
   const [formData, setFormData] = useState({
-    seller_name: '',
+    full_name: '',
     email: '',
     phone: '',
     category: '',
@@ -676,7 +676,7 @@ export default function ApplicationForm() {
       if (response.ok) {
         setMessage(`Success! Application ID: ${data.id}`);
         setFormData({
-          seller_name: '',
+          full_name: '',
           email: '',
           phone: '',
           category: '',
@@ -742,7 +742,7 @@ curl https://mimmarketplace.onrender.com/health
 curl -X POST https://mimmarketplace.onrender.com/applications \
   -H "Content-Type: application/json" \
   -d '{
-    "seller_name": "Test Seller",
+    "full_name": "Test Seller",
     "email": "test@example.com",
     "category": "electronics",
     "language": "en",

@@ -24,7 +24,7 @@ async function checkConnection() {
       console.log('✅ Database connected!');
       console.log(`   Found ${apps.length} application(s) in database`);
       if (apps.length > 0) {
-        console.log(`   Latest: ${apps[0].seller_name} (${apps[0].email})`);
+        console.log(`   Latest: ${apps[0].full_name} (${apps[0].email})`);
       }
     } else {
       const error = await appsRes.text();

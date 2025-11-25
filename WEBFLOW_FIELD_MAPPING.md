@@ -8,7 +8,7 @@ Based on your form field names, here's how they map to the database:
 
 | Webflow Field Name | Database Field | Type | Notes |
 |-------------------|----------------|------|-------|
-| `full_name` | `seller_name` | String | Required - Seller's full name |
+| `full_name` | `full_name` | String | Required - Seller's full name |
 | `email` | `email` | String | Required - Email address |
 | `phone_number` | `phone` | String | Optional - Phone number |
 | `products_category` | `category` | String | Required - Product category |
@@ -74,7 +74,7 @@ The code handles these variations automatically (with underscore/hyphen normaliz
 
 ### Core Fields (Direct columns)
 - `id` - UUID (auto-generated)
-- `seller_name` - From `full_name`
+- `full_name` - From `full_name`
 - `email` - From `email`
 - `phone` - From `phone_number` (optional)
 - `category` - From `products_category`
@@ -132,7 +132,7 @@ curl -X POST https://mimmarketplace.onrender.com/webhooks/webflow \
    - Should show: `full_name`, `email`, `phone_number`, etc.
 
 2. **Check Database:**
-   - `seller_name` should have value from `full_name`
+   - `full_name` should have value from `full_name`
    - `email` should have value from `email`
    - `phone` should have value from `phone_number`
    - `submitted_fields` JSON should contain all other fields

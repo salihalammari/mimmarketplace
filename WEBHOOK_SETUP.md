@@ -55,7 +55,7 @@ async function submitForm(formData) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      seller_name: formData.fullName,
+      full_name: formData.fullName,
       email: formData.email,
       phone: formData.phone,
       category: formData.category,
@@ -163,7 +163,7 @@ Admin Dashboard Displays New Application
 ### Data not saving correctly
 
 1. **Check Required Fields**
-   - `seller_name` (from `full-name`)
+   - `full_name` (from `full-name`)
    - `email`
    - `category`
    - `language`
@@ -180,7 +180,7 @@ Admin Dashboard Displays New Application
 
 | Form Field Name | Database Field | Type |
 |----------------|----------------|------|
-| `full-name` / `الاسم-الكامل` | `seller_name` | Required |
+| `full-name` / `الاسم-الكامل` | `full_name` | Required |
 | `email` / `البريد-الالكتروني` | `email` | Required |
 | `phone` / `رقم-الهاتف` | `phone` | Optional |
 | `category` / `فئة` | `category` | Required |

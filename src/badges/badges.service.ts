@@ -20,7 +20,7 @@ export class BadgesService {
     // Check if seller already exists (by name)
     let seller = await this.prisma.sellers.findFirst({
       where: {
-        name: application.seller_name,
+        name: application.full_name,
       },
     });
 
@@ -28,7 +28,7 @@ export class BadgesService {
     if (!seller) {
       seller = await this.prisma.sellers.create({
         data: {
-          name: application.seller_name,
+          name: application.full_name,
           category: application.category,
           city: (application.submitted_fields as any)?.city || null,
           shop_url: (application.submitted_fields as any)?.mainSalesPageLink || null,

@@ -548,7 +548,7 @@
 
           return `
           <tr>
-            <td><strong>${app.seller_name}</strong></td>
+            <td><strong>${app.full_name}</strong></td>
             <td>${app.email}</td>
             <td>${app.phone || '-'}</td>
             <td>${app.city || submittedFields.city || '-'}</td>
@@ -593,7 +593,7 @@
         const details = `
           <div class="form-group">
             <label>Seller Name</label>
-            <input type="text" value="${app.seller_name}" readonly>
+            <input type="text" value="${app.full_name}" readonly>
           </div>
           <div class="form-group">
             <label>Email</label>

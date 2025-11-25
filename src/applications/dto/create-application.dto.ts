@@ -2,7 +2,7 @@ import { IsString, IsEmail, IsOptional, IsObject, IsBoolean, IsArray } from 'cla
 
 export class CreateApplicationDto {
   @IsString()
-  seller_name: string;
+  full_name: string;
 
   @IsEmail()
   email: string;
