@@ -14,4 +14,12 @@ services:
         value: 10000
       - key: WEBFLOW_WEBHOOK_SECRET
         sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: WHATSAPP_DEFAULT_COUNTRY_CODE
+        value: "+212"
     healthCheckPath: /health

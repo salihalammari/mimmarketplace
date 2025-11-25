@@ -1,16 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { WebflowWebhookDto } from './dto/webflow-webhook.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(ApplicationsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(createApplicationDto: CreateApplicationDto) {
-    return this.prisma.applications.create({
+    const application = await this.prisma.applications.create({
       data: createApplicationDto,
     });
+    await this.notificationsService.notifyApplicationReceived(application);
+    return application;
   }
 
   async createFromWebflow(webhookData: WebflowWebhookDto) {
@@ -261,6 +269,7 @@ export class ApplicationsService {
   async updateStatus(id: string, status: string, notes?: string) {
     const updateData: any = {
       status,
+      needs_info_reminder_sent_at: null,
     };
 
     if (notes) {
@@ -285,10 +294,34 @@ export class ApplicationsService {
       },
     });
 
-    return this.prisma.applications.update({
+    const updatedApplication = await this.prisma.applications.update({
       where: { id },
       data: updateData,
     });
+
+    if (this.shouldSendStatusNotification(status)) {
+      try {
+        await this.notificationsService.notifyStatusChange(
+          updatedApplication,
+          status,
+          notes,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to send status notification for application ${id}: ${error.message}`,
+        );
+      }
+    }
+
+    return updatedApplication;
+  }
+
+  private shouldSendStatusNotification(
+    status: string,
+  ): status is 'needs_info' | 'qualified' | 'rejected' | 'badge_activated' {
+    return ['needs_info', 'qualified', 'rejected', 'badge_activated'].includes(
+      status,
+    );
   }
 
   async getStats() {

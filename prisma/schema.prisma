@@ -34,6 +34,7 @@ model applications {
   instagram_handle         String?
   facebook_handle          String?
   tiktok_handle            String?
+  needs_info_reminder_sent_at DateTime?
   submitted_fields Json?
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
