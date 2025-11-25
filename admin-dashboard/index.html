@@ -151,6 +151,72 @@
     .status-needs_info { background: #dbeafe; color: #1e40af; }
     .status-badge_activated { background: #ede9fe; color: #5b21b6; }
 
+    .status-dropdown-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-select {
+      padding: 0.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      background: white;
+      min-width: 150px;
+    }
+
+    .status-select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .status-select.pending { border-color: #f59e0b; }
+    .status-select.needs_info { border-color: #3b82f6; }
+    .status-select.qualified { border-color: #10b981; }
+    .status-select.rejected { border-color: #ef4444; }
+    .status-select.badge_activated { border-color: #8b5cf6; }
+
+    .status-confirm-btn {
+      padding: 0.25rem 0.75rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: none;
+    }
+
+    .status-confirm-btn.show {
+      display: inline-block;
+    }
+
+    .status-confirm-btn.save {
+      background: #10b981;
+      color: white;
+    }
+
+    .status-confirm-btn.save:hover {
+      background: #059669;
+    }
+
+    .status-confirm-btn.cancel {
+      background: #ef4444;
+      color: white;
+    }
+
+    .status-confirm-btn.cancel:hover {
+      background: #dc2626;
+    }
+
+    .status-saving {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
     .action-buttons {
       display: flex;
       gap: 0.5rem;
@@ -347,6 +413,7 @@
             <th>Shop URL</th>
             <th>Selling Duration</th>
             <th>Badge Use</th>
+            <th>Category</th>
             <th>Status</th>
             <th>Created</th>
             <th>Actions</th>
@@ -444,6 +511,7 @@
     console.log('Current origin:', window.location.origin);
     let currentStatusFilter = '';
     let selectedBadgeLevel = 1;
+    const pendingStatusChanges = new Map(); // Track pending status changes
 
     // Load data on page load
     document.addEventListener('DOMContentLoaded', () => {
@@ -560,12 +628,33 @@
             <td>${app.time_selling || submittedFields.sellingDuration || submittedFields.timeSelling || '-'}</td>
             <td>${badgeUse}</td>
             <td>${app.category}</td>
-            <td><span class="status-badge status-${app.status}">${app.status.replace('_', ' ')}</span></td>
+            <td>
+              <div class="status-dropdown-container" data-app-id="${app.id}">
+                <select class="status-select status-${app.status}" 
+                        data-original-status="${app.status}"
+                        onchange="handleStatusChange('${app.id}', this.value)">
+                  <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>Pending</option>
+                  <option value="needs_info" ${app.status === 'needs_info' ? 'selected' : ''}>Needs Info</option>
+                  <option value="qualified" ${app.status === 'qualified' ? 'selected' : ''}>Qualified</option>
+                  <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                  <option value="badge_activated" ${app.status === 'badge_activated' ? 'selected' : ''}>Badge Activated</option>
+                </select>
+                <button class="status-confirm-btn save" 
+                        onclick="confirmStatusChange('${app.id}')" 
+                        title="Confirm change">
+                  ✓
+                </button>
+                <button class="status-confirm-btn cancel" 
+                        onclick="cancelStatusChange('${app.id}')" 
+                        title="Cancel change">
+                  ✕
+                </button>
+              </div>
+            </td>
             <td>${new Date(app.created_at).toLocaleDateString()}</td>
             <td>
               <div class="action-buttons">
                 <button class="btn btn-primary" onclick="viewDetails('${app.id}')">View</button>
-                <button class="btn btn-warning" onclick="openStatusModal('${app.id}', '${app.status}')">Status</button>
                 ${app.status === 'qualified' ? `<button class="btn btn-success" onclick="openBadgeModal('${app.id}')">Create Badge</button>` : ''}
               </div>
             </td>
@@ -921,6 +1010,135 @@
 
     function closeModal(modalId) {
       document.getElementById(modalId).classList.remove('active');
+    }
+
+    function handleStatusChange(appId, newStatus) {
+      const container = document.querySelector(`[data-app-id="${appId}"]`);
+      const select = container.querySelector('.status-select');
+      const saveBtn = container.querySelector('.status-confirm-btn.save');
+      const cancelBtn = container.querySelector('.status-confirm-btn.cancel');
+      const originalStatus = select.getAttribute('data-original-status');
+
+      // Check if status actually changed
+      if (newStatus === originalStatus) {
+        // No change, hide buttons
+        saveBtn.classList.remove('show');
+        cancelBtn.classList.remove('show');
+        pendingStatusChanges.delete(appId);
+        // Reset select class
+        select.className = `status-select status-${originalStatus}`;
+        return;
+      }
+
+      // Status changed, show confirmation buttons
+      saveBtn.classList.add('show');
+      cancelBtn.classList.add('show');
+      
+      // Store pending change
+      pendingStatusChanges.set(appId, {
+        newStatus,
+        originalStatus,
+        select
+      });
+
+      // Update select styling to show pending change
+      select.className = `status-select status-${newStatus}`;
+      select.style.borderColor = getStatusColor(newStatus);
+    }
+
+    function getStatusColor(status) {
+      const colors = {
+        'pending': '#f59e0b',
+        'needs_info': '#3b82f6',
+        'qualified': '#10b981',
+        'rejected': '#ef4444',
+        'badge_activated': '#8b5cf6'
+      };
+      return colors[status] || '#e5e7eb';
+    }
+
+    async function confirmStatusChange(appId) {
+      const change = pendingStatusChanges.get(appId);
+      if (!change) return;
+
+      const container = document.querySelector(`[data-app-id="${appId}"]`);
+      const select = container.querySelector('.status-select');
+      const saveBtn = container.querySelector('.status-confirm-btn.save');
+      const cancelBtn = container.querySelector('.status-confirm-btn.cancel');
+
+      // Show loading state
+      container.classList.add('status-saving');
+      select.disabled = true;
+
+      try {
+        // Confirm with user before making the change
+        const confirmed = confirm(
+          `Are you sure you want to change the status to "${change.newStatus.replace('_', ' ')}"?`
+        );
+
+        if (!confirmed) {
+          // User cancelled, restore original state
+          cancelStatusChange(appId);
+          return;
+        }
+
+        // Make API call to update status
+        const response = await fetch(`${API_URL}/applications/${appId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: change.newStatus }),
+        });
+
+        if (response.ok) {
+          // Success - hide buttons and update original status
+          saveBtn.classList.remove('show');
+          cancelBtn.classList.remove('show');
+          pendingStatusChanges.delete(appId);
+          
+          // Update the data-original-status attribute
+          select.setAttribute('data-original-status', change.newStatus);
+          
+          // Reload data to reflect changes
+          loadStats();
+          loadApplications();
+        } else {
+          const error = await response.json();
+          alert('Error: ' + (error.message || 'Failed to update status'));
+          // Restore original state on error
+          cancelStatusChange(appId);
+        }
+      } catch (error) {
+        console.error('Error updating status:', error);
+        alert('Error updating status');
+        // Restore original state on error
+        cancelStatusChange(appId);
+      } finally {
+        // Remove loading state
+        container.classList.remove('status-saving');
+        select.disabled = false;
+      }
+    }
+
+    function cancelStatusChange(appId) {
+      const change = pendingStatusChanges.get(appId);
+      if (!change) return;
+
+      const container = document.querySelector(`[data-app-id="${appId}"]`);
+      const select = container.querySelector('.status-select');
+      const saveBtn = container.querySelector('.status-confirm-btn.save');
+      const cancelBtn = container.querySelector('.status-confirm-btn.cancel');
+
+      // Restore original status
+      select.value = change.originalStatus;
+      select.className = `status-select status-${change.originalStatus}`;
+      select.style.borderColor = getStatusColor(change.originalStatus);
+
+      // Hide buttons
+      saveBtn.classList.remove('show');
+      cancelBtn.classList.remove('show');
+      
+      // Remove from pending changes
+      pendingStatusChanges.delete(appId);
     }
 
     // Close modal on outside click
