@@ -11,10 +11,31 @@
       box-sizing: border-box;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       background: #f5f5f5;
       color: #333;
+      min-height: 100vh;
+      overflow-y: scroll;
+      scrollbar-color: #c7d2fe transparent;
+      scrollbar-width: thin;
+    }
+
+    body::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    body::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #a5b4fc 0%, #818cf8 100%);
+      border-radius: 999px;
     }
 
     .header {
@@ -104,8 +125,37 @@
     .applications-table {
       background: white;
       border-radius: 8px;
-      overflow: hidden;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      max-height: 70vh;
+    }
+
+    .table-scroll {
+      overflow-y: auto;
+      flex: 1;
+      border-top: 1px solid #f1f5f9;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5f5 #f8fafc;
+      display: none;
+    }
+
+    .table-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .table-scroll::-webkit-scrollbar-track {
+      background: #f8fafc;
+      border-radius: 999px;
+    }
+
+    .table-scroll::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #a5b4fc 0%, #6366f1 100%);
+      border-radius: 999px;
+    }
+
+    .table-scroll::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
     }
 
     table {
@@ -115,6 +165,10 @@
 
     thead {
       background: #f9fafb;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      box-shadow: 0 2px 4px rgba(15,23,42,0.04);
     }
 
     th {
@@ -154,7 +208,7 @@
     .status-dropdown-container {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
     .status-select {
@@ -403,25 +457,27 @@
     <!-- Applications Table -->
     <div class="applications-table">
       <div id="loading" class="loading">Loading applications...</div>
-      <table id="applicationsTable" style="display: none;">
-        <thead>
-          <tr>
-            <th>Seller Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>City</th>
-            <th>Shop URL</th>
-            <th>Selling Duration</th>
-            <th>Badge Use</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="applicationsBody">
-        </tbody>
-      </table>
+      <div id="tableWrapper" class="table-scroll">
+        <table id="applicationsTable">
+          <thead>
+            <tr>
+              <th>Seller Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>City</th>
+              <th>Shop URL</th>
+              <th>Selling Duration</th>
+              <th>Badge Use</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="applicationsBody">
+          </tbody>
+        </table>
+      </div>
       <div id="emptyState" class="empty-state" style="display: none;">
         No applications found
       </div>
@@ -572,12 +628,12 @@
 
     async function loadApplications() {
       const loading = document.getElementById('loading');
-      const table = document.getElementById('applicationsTable');
+      const tableWrapper = document.getElementById('tableWrapper');
       const emptyState = document.getElementById('emptyState');
       const tbody = document.getElementById('applicationsBody');
 
       loading.style.display = 'block';
-      table.style.display = 'none';
+      tableWrapper.style.display = 'none';
       emptyState.style.display = 'none';
 
       try {
@@ -662,7 +718,8 @@
         `;
         }).join('');
 
-        table.style.display = 'table';
+        tableWrapper.style.display = 'block';
+        tableWrapper.scrollTop = 0;
         console.log('Applications table displayed successfully');
       } catch (error) {
         console.error('Error loading applications:', error);
