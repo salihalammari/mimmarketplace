@@ -324,6 +324,68 @@ export class ApplicationsService {
     );
   }
 
+  async testNotification(email: string, type: string = 'received') {
+    // Create a mock application for testing
+    const mockApplication = {
+      id: 'test-' + Date.now(),
+      email,
+      full_name: 'Test User',
+      phone: null,
+      whatsapp_number: null,
+      category: 'test',
+      language: 'ar',
+      status: type === 'received' ? 'pending' : type,
+      selling_page: null,
+      secondary_selling_page: null,
+      city: null,
+      products_category: null,
+      other_products: null,
+      valid_product: null,
+      products_type: null,
+      time_selling: null,
+      feedbacks: null,
+      return_policies: null,
+      fake_orders: null,
+      badge_use: [],
+      delivery_duration: null,
+      delivery_zone: null,
+      instagram_handle: null,
+      facebook_handle: null,
+      tiktok_handle: null,
+      needs_info_reminder_sent_at: null,
+      submitted_fields: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as any;
+
+    try {
+      if (type === 'received') {
+        await this.notificationsService.notifyApplicationReceived(mockApplication);
+      } else {
+        await this.notificationsService.notifyStatusChange(
+          mockApplication,
+          type as any,
+          'Test notification message',
+        );
+      }
+
+      return {
+        success: true,
+        message: `Test ${type} notification sent to ${email}`,
+        email,
+        type,
+      };
+    } catch (error) {
+      this.logger.error(`Test notification failed: ${error.message}`);
+      return {
+        success: false,
+        message: `Failed to send test notification: ${error.message}`,
+        email,
+        type,
+      };
+    }
+  }
+
   async getStats() {
     const [total, pending, qualified, rejected, needsInfo, badgeActivated] = await Promise.all([
       this.prisma.applications.count(),

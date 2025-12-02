@@ -39,5 +39,11 @@ export class ApplicationsController {
   ) {
     return this.applicationsService.updateStatus(id, body.status, body.notes);
   }
+
+  @Post('test-notification')
+  @HttpCode(HttpStatus.OK)
+  async testNotification(@Body() body: { email: string; type?: string }) {
+    return this.applicationsService.testNotification(body.email, body.type);
+  }
 }
 
