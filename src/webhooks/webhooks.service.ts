@@ -16,9 +16,6 @@ export class WebhooksService {
     
     this.logger.log(`Application created with ID: ${application.id}`);
     
-    // TODO: Send WhatsApp notification here
-    // await this.sendWhatsAppNotification(application);
-    
     return application;
   }
 }

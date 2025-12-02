@@ -104,10 +104,9 @@ The webhook handler automatically maps Webflow form fields. Supported field name
      - Get this from: Supabase → Settings → Database → Connection string → URI (direct)
    - `NODE_ENV` - Already set to `production` in render.yaml
    - `PORT` - Already set to `10000` in render.yaml
-   - `TWILIO_ACCOUNT_SID` - From your Twilio console (required for WhatsApp)
-   - `TWILIO_AUTH_TOKEN` - Twilio auth token
-   - `TWILIO_WHATSAPP_FROM` - Your approved WhatsApp-enabled Twilio number (without the `whatsapp:` prefix, e.g. `+14155238886`)
-   - `WHATSAPP_DEFAULT_COUNTRY_CODE` - Defaults to `+212` if omitted
+   - `RESEND_API_KEY` - From Resend.com (free tier: 3,000 emails/month) - Get it at https://resend.com/api-keys
+   - `NOTIFICATION_FROM_EMAIL` - Already set to `noreply@mimmarketplace.com` in render.yaml (update with your verified domain)
+   - `NOTIFICATION_FROM_NAME` - Already set to `MIM Marketplace` in render.yaml
 6. Deploy! Migrations will run automatically on startup
 
 ### Option 2: Manual Setup

@@ -14,11 +14,25 @@ services:
         value: 10000
       - key: WEBFLOW_WEBHOOK_SECRET
         sync: false
-      - key: TWILIO_ACCOUNT_SID
+      - key: RESEND_API_KEY
         sync: false
-      - key: TWILIO_AUTH_TOKEN
+      - key: NOTIFICATION_FROM_EMAIL
+        value: "noreply@mimmarketplace.com"
+      - key: NOTIFICATION_FROM_NAME
+        value: "MIM Marketplace"
+      - key: EVOLUTION_API_URL
         sync: false
-      - key: TWILIO_WHATSAPP_FROM
+      - key: EVOLUTION_API_KEY
+        sync: false
+      - key: EVOLUTION_INSTANCE_NAME
+        sync: false
+      - key: CHATAPI_URL
+        sync: false
+      - key: CHATAPI_INSTANCE_ID
+        sync: false
+      - key: CHATAPI_TOKEN
+        sync: false
+      - key: WHATSAPP_WEBHOOK_URL
         sync: false
       - key: WHATSAPP_DEFAULT_COUNTRY_CODE
         value: "+212"
