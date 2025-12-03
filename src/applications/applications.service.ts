@@ -267,6 +267,8 @@ export class ApplicationsService {
   }
 
   async updateStatus(id: string, status: string, notes?: string) {
+    this.logger.log(`Updating status for application ${id} to ${status}`);
+    
     const updateData: any = {
       status,
       needs_info_reminder_sent_at: null,
@@ -299,18 +301,31 @@ export class ApplicationsService {
       data: updateData,
     });
 
+    // Always attempt to send notification if status should trigger one
     if (this.shouldSendStatusNotification(status)) {
+      this.logger.log(
+        `Status ${status} requires notification. Sending to ${updatedApplication.email} (phone: ${updatedApplication.phone || updatedApplication.whatsapp_number || 'none'})`,
+      );
       try {
         await this.notificationsService.notifyStatusChange(
           updatedApplication,
-          status,
+          status as 'needs_info' | 'qualified' | 'rejected' | 'badge_activated',
           notes,
+        );
+        this.logger.log(
+          `Notification sent successfully for application ${id} (status: ${status})`,
         );
       } catch (error) {
         this.logger.error(
           `Failed to send status notification for application ${id}: ${error.message}`,
+          error.stack,
         );
+        // Don't throw - status update should succeed even if notification fails
       }
+    } else {
+      this.logger.debug(
+        `Status ${status} does not require notification (only: needs_info, qualified, rejected, badge_activated)`,
+      );
     }
 
     return updatedApplication;
@@ -403,6 +418,28 @@ export class ApplicationsService {
       rejected,
       needsInfo,
       badgeActivated,
+    };
+  }
+
+  async getNotificationStatus(id: string) {
+    const application = await this.findOne(id);
+    if (!application) {
+      return { error: 'Application not found' };
+    }
+
+    const shouldNotify = this.shouldSendStatusNotification(application.status);
+    const whatsappNumber = application.whatsapp_number || application.phone;
+    
+    return {
+      applicationId: id,
+      status: application.status,
+      email: application.email,
+      phone: application.phone,
+      whatsappNumber: application.whatsapp_number,
+      shouldSendNotification: shouldNotify,
+      notificationStatus: shouldNotify
+        ? 'Will send on next status change'
+        : `Status '${application.status}' does not trigger notifications (only: needs_info, qualified, rejected, badge_activated)`,
     };
   }
 }

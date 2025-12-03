@@ -45,5 +45,10 @@ export class ApplicationsController {
   async testNotification(@Body() body: { email: string; type?: string }) {
     return this.applicationsService.testNotification(body.email, body.type);
   }
+
+  @Get('notification-status/:id')
+  async getNotificationStatus(@Param('id') id: string) {
+    return this.applicationsService.getNotificationStatus(id);
+  }
 }
 

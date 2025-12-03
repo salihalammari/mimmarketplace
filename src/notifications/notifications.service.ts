@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
 import { applications } from '@prisma/client';
 
 type StatusTemplateKey =
@@ -14,19 +15,40 @@ type StatusTemplateKey =
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   private readonly resend?: Resend;
+  private readonly gmailTransporter?: nodemailer.Transporter;
   private readonly fromEmail: string;
   private readonly fromName: string;
+  private readonly emailProvider: 'gmail' | 'resend' | 'none';
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.fromEmail = this.configService.get<string>('NOTIFICATION_FROM_EMAIL') || 'noreply@mimmarketplace.com';
     this.fromName = this.configService.get<string>('NOTIFICATION_FROM_NAME') || 'MIM Marketplace';
 
-    if (apiKey) {
-      this.resend = new Resend(apiKey);
-      this.logger.log('Email notifications enabled via Resend');
+    // Check for Gmail configuration first
+    const gmailUser = this.configService.get<string>('GMAIL_USER');
+    const gmailAppPassword = this.configService.get<string>('GMAIL_APP_PASSWORD');
+
+    if (gmailUser && gmailAppPassword) {
+      this.gmailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: gmailUser,
+          pass: gmailAppPassword,
+        },
+      });
+      this.emailProvider = 'gmail';
+      this.logger.log(`Email notifications enabled via Gmail (${gmailUser})`);
     } else {
-      this.logger.warn('RESEND_API_KEY missing. Email notifications are disabled.');
+      // Fallback to Resend
+      const apiKey = this.configService.get<string>('RESEND_API_KEY');
+      if (apiKey) {
+        this.resend = new Resend(apiKey);
+        this.emailProvider = 'resend';
+        this.logger.log('Email notifications enabled via Resend');
+      } else {
+        this.emailProvider = 'none';
+        this.logger.warn('No email provider configured. Set GMAIL_USER/GMAIL_APP_PASSWORD or RESEND_API_KEY.');
+      }
     }
   }
 
@@ -39,6 +61,9 @@ export class NotificationsService {
     status: StatusTemplateKey,
     notes?: string,
   ) {
+    this.logger.log(
+      `notifyStatusChange called for application ${application.id} with status: ${status}`,
+    );
     await this.sendNotifications(application, status, notes);
   }
 
@@ -52,6 +77,10 @@ export class NotificationsService {
     notes?: string,
     isReminder = false,
   ) {
+    this.logger.log(
+      `[NOTIFICATION] Starting notifications for application ${application.id} (template: ${template}, email: ${application.email})`,
+    );
+
     const { email, subject, htmlBody, textBody } = this.buildEmailTemplate(
       application,
       template,
@@ -59,29 +88,83 @@ export class NotificationsService {
       isReminder,
     );
 
-    // Send email
-    if (this.resend && email) {
-      try {
-        await this.resend.emails.send({
-          from: `${this.fromName} <${this.fromEmail}>`,
-          to: email,
-          subject,
-          html: htmlBody,
-          text: textBody,
-        });
-        this.logger.log(`Email notification sent to ${email} for application ${application.id}`);
-      } catch (error) {
-        this.logger.error(
-          `Failed to send email notification for application ${application.id}: ${error.message}`,
+    // Send email - ALWAYS attempt if email exists
+    let emailSent = false;
+    if (email) {
+      if (this.emailProvider === 'gmail' && this.gmailTransporter) {
+        try {
+          this.logger.log(`[EMAIL] Attempting to send email to ${email} via Gmail...`);
+          const result = await this.gmailTransporter.sendMail({
+            from: `${this.fromName} <${this.fromEmail}>`,
+            to: email,
+            subject,
+            html: htmlBody,
+            text: textBody,
+          });
+          this.logger.log(
+            `[EMAIL] ✅ Email notification sent successfully to ${email} for application ${application.id}. Message ID: ${result.messageId || 'N/A'}`,
+          );
+          emailSent = true;
+        } catch (error) {
+          this.logger.error(
+            `[EMAIL] ❌ Failed to send email notification via Gmail for application ${application.id}: ${error.message}`,
+            error.stack,
+          );
+        }
+      } else if (this.emailProvider === 'resend' && this.resend) {
+        try {
+          this.logger.log(`[EMAIL] Attempting to send email to ${email} via Resend...`);
+          const result = await this.resend.emails.send({
+            from: `${this.fromName} <${this.fromEmail}>`,
+            to: email,
+            subject,
+            html: htmlBody,
+            text: textBody,
+          });
+          this.logger.log(
+            `[EMAIL] ✅ Email notification sent successfully to ${email} for application ${application.id}. Resend ID: ${(result as any).id || 'N/A'}`,
+          );
+          emailSent = true;
+        } catch (error) {
+          this.logger.error(
+            `[EMAIL] ❌ Failed to send email notification via Resend for application ${application.id}: ${error.message}`,
+            error.stack,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `[EMAIL] ⚠️ No email provider configured. Email notification skipped for application ${application.id}. Set GMAIL_USER/GMAIL_APP_PASSWORD or RESEND_API_KEY.`,
         );
       }
+    } else {
+      this.logger.warn(
+        `[EMAIL] ⚠️ No email address found for application ${application.id}. Email notification skipped.`,
+      );
     }
 
-    // WhatsApp notification
+    // WhatsApp notification - ALWAYS attempt if message template exists
     const whatsappMessage = this.buildWhatsAppTemplate(application, template, notes, isReminder);
+    let whatsappSent = false;
     if (whatsappMessage) {
-      await this.sendWhatsAppMessage(application, whatsappMessage);
+      this.logger.log(`[WHATSAPP] Attempting to send WhatsApp message for application ${application.id}...`);
+      const phone = this.getWhatsAppNumber(application);
+      if (phone) {
+        await this.sendWhatsAppMessage(application, whatsappMessage);
+        // Note: sendWhatsAppMessage logs success/failure internally
+        whatsappSent = true; // We attempted, even if it failed
+      } else {
+        this.logger.warn(
+          `[WHATSAPP] ⚠️ No phone number found for application ${application.id}. WhatsApp notification skipped.`,
+        );
+      }
+    } else {
+      this.logger.debug(`[WHATSAPP] No WhatsApp message template for template: ${template}`);
     }
+
+    // Summary log
+    this.logger.log(
+      `[NOTIFICATION] Summary for application ${application.id}: Email=${emailSent ? '✅' : '❌'}, WhatsApp=${whatsappSent ? '✅' : '❌'}`,
+    );
   }
 
   private buildEmailTemplate(
@@ -254,13 +337,13 @@ export class NotificationsService {
 
         if (response.ok) {
           this.logger.log(
-            `WhatsApp notification sent via Evolution API to ${phone} for application ${application.id}`,
+            `[WHATSAPP] ✅ WhatsApp notification sent via Evolution API to ${phone} for application ${application.id}`,
           );
           return;
         } else {
           const error = await response.text();
           this.logger.warn(
-            `Evolution API failed for ${phone}: ${error}`,
+            `[WHATSAPP] ⚠️ Evolution API failed for ${phone}: ${error}`,
           );
         }
       } catch (error) {
@@ -296,13 +379,13 @@ export class NotificationsService {
 
         if (response.ok) {
           this.logger.log(
-            `WhatsApp notification sent via Business API to ${phone} for application ${application.id}`,
+            `[WHATSAPP] ✅ WhatsApp notification sent via Business API to ${phone} for application ${application.id}`,
           );
           return;
         } else {
           const error = await response.text();
           this.logger.warn(
-            `WhatsApp Business API failed for ${phone}: ${error}`,
+            `[WHATSAPP] ⚠️ WhatsApp Business API failed for ${phone}: ${error}`,
           );
         }
       } catch (error) {
@@ -319,30 +402,30 @@ export class NotificationsService {
 
     if (chatApiUrl && chatApiInstance && chatApiToken) {
       try {
-        const baseUrl = chatApiUrl.replace(/\/$/, '');
-        const response = await fetch(
-          `${baseUrl}/instance${chatApiInstance}/sendMessage?token=${chatApiToken}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              phone,
-              body: message,
-            }),
+        const baseUrl = chatApiUrl.replace(/\/$/, ''); // Remove trailing slash
+        const url = `${baseUrl}/sendMessage?token=${chatApiToken}`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
+          body: JSON.stringify({
+            phone: phone.replace('+', ''), // ChatAPI expects number without '+'
+            body: message,
+            instanceId: chatApiInstance,
+          }),
+        });
 
         if (response.ok) {
           this.logger.log(
-            `WhatsApp notification sent via ChatAPI to ${phone} for application ${application.id}`,
+            `[WHATSAPP] ✅ WhatsApp notification sent via ChatAPI to ${phone} for application ${application.id}`,
           );
           return;
         } else {
           const error = await response.text();
           this.logger.warn(
-            `ChatAPI failed for ${phone}: ${error}`,
+            `[WHATSAPP] ⚠️ ChatAPI failed for ${phone}: ${error}`,
           );
         }
       } catch (error) {
@@ -371,13 +454,13 @@ export class NotificationsService {
 
         if (response.ok) {
           this.logger.log(
-            `WhatsApp notification sent via webhook to ${phone} for application ${application.id}`,
+            `[WHATSAPP] ✅ WhatsApp notification sent via webhook to ${phone} for application ${application.id}`,
           );
           return;
         } else {
           const error = await response.text();
           this.logger.warn(
-            `WhatsApp webhook failed for ${phone}: ${error}`,
+            `[WHATSAPP] ⚠️ WhatsApp webhook failed for ${phone}: ${error}`,
           );
         }
       } catch (error) {
@@ -387,12 +470,83 @@ export class NotificationsService {
       }
     }
 
-    // If no WhatsApp service configured, log the message for manual sending
+    // If no WhatsApp service configured, log warning
     if (!evolutionApiUrl && !whatsappBusinessApiUrl && !chatApiUrl && !whatsappWebhookUrl) {
-      this.logger.debug(
-        `WhatsApp message prepared for ${phone} (no service configured):\n${message}`,
+      this.logger.warn(
+        `[WHATSAPP] ⚠️ No WhatsApp service configured. Message prepared for ${phone} but not sent:\n${message}`,
+      );
+    } else {
+      // All services failed
+      this.logger.error(
+        `[WHATSAPP] ❌ All WhatsApp services failed for application ${application.id}. Phone: ${phone}. Message: "${message.substring(0, 50)}..."`,
       );
     }
+  }
+
+  // Diagnostic method to check configuration
+  getConfigurationStatus() {
+    const gmailUser = this.configService.get<string>('GMAIL_USER');
+    const gmailAppPassword = this.configService.get<string>('GMAIL_APP_PASSWORD');
+    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
+    const fromEmail = this.configService.get<string>('NOTIFICATION_FROM_EMAIL') || this.fromEmail;
+    const fromName = this.configService.get<string>('NOTIFICATION_FROM_NAME') || this.fromName;
+    
+    const evolutionApiUrl = this.configService.get<string>('EVOLUTION_API_URL');
+    const evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY');
+    const evolutionInstance = this.configService.get<string>('EVOLUTION_INSTANCE_NAME');
+    
+    const whatsappBusinessApiUrl = this.configService.get<string>('WHATSAPP_BUSINESS_API_URL');
+    const whatsappBusinessToken = this.configService.get<string>('WHATSAPP_BUSINESS_TOKEN');
+    const whatsappBusinessPhoneId = this.configService.get<string>('WHATSAPP_BUSINESS_PHONE_ID');
+    
+    const chatApiUrl = this.configService.get<string>('CHATAPI_URL');
+    const chatApiInstance = this.configService.get<string>('CHATAPI_INSTANCE_ID');
+    const chatApiToken = this.configService.get<string>('CHATAPI_TOKEN');
+    
+    const whatsappWebhookUrl = this.configService.get<string>('WHATSAPP_WEBHOOK_URL');
+    
+    return {
+      email: {
+        provider: this.emailProvider,
+        enabled: this.emailProvider !== 'none',
+        fromEmail,
+        fromName,
+        gmail: {
+          enabled: !!(gmailUser && gmailAppPassword),
+          user: gmailUser || 'Not set',
+          appPasswordSet: !!gmailAppPassword,
+        },
+        resend: {
+          enabled: !!resendApiKey,
+          apiKeySet: !!resendApiKey,
+        },
+      },
+      whatsapp: {
+        evolutionApi: {
+          enabled: !!(evolutionApiUrl && evolutionInstance),
+          url: evolutionApiUrl ? 'Set' : 'Not set',
+          instance: evolutionInstance || 'Not set',
+          apiKey: evolutionApiKey ? 'Set' : 'Not set',
+        },
+        businessApi: {
+          enabled: !!(whatsappBusinessApiUrl && whatsappBusinessToken && whatsappBusinessPhoneId),
+          url: whatsappBusinessApiUrl ? 'Set' : 'Not set',
+          token: whatsappBusinessToken ? 'Set' : 'Not set',
+          phoneId: whatsappBusinessPhoneId || 'Not set',
+        },
+        chatApi: {
+          enabled: !!(chatApiUrl && chatApiInstance && chatApiToken),
+          url: chatApiUrl ? 'Set' : 'Not set',
+          instance: chatApiInstance || 'Not set',
+          token: chatApiToken ? 'Set' : 'Not set',
+        },
+        webhook: {
+          enabled: !!whatsappWebhookUrl,
+          url: whatsappWebhookUrl ? 'Set' : 'Not set',
+        },
+        anyEnabled: !!(evolutionApiUrl || whatsappBusinessApiUrl || chatApiUrl || whatsappWebhookUrl),
+      },
+    };
   }
 
   private getWhatsAppNumber(application: applications): string | null {
