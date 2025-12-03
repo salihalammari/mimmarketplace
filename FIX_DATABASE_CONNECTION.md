@@ -1,91 +1,102 @@
-# Fix Database Connection Issue
+# Fix Database Connection Error
 
-## Problem
-The application can't connect to the Supabase database with error:
+## ❌ Current Problem
+
+Render logs show:
 ```
-Can't reach database server at `db.tjxotorfwaqzcvtoealh.supabase.co:5432`
-```
-
-## Root Causes
-
-1. **Incomplete Password in .env** - Your `.env` file shows `Sali2991...` which is truncated
-2. **Network Connectivity** - WSL/Windows might have network restrictions
-3. **Wrong Connection String Format** - Missing SSL mode or incorrect endpoint
-
-## Solution Steps
-
-### Step 1: Get Your Complete Database Password
-
-1. Go to [Supabase Dashboard](https://app.supabase.com)
-2. Select your project: `tjxotorfwaqzcvtoealh`
-3. Go to **Settings** → **Database**
-4. Scroll to **Connection string**
-5. Select **URI** tab
-6. Copy the **complete** connection string
-
-### Step 2: Update Your .env File
-
-Open `.env` and replace the `DATABASE_URL` line with the complete connection string:
-
-**For Local Development (Direct Connection):**
-```env
-DATABASE_URL="postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_COMPLETE_PASSWORD@db.tjxotorfwaqzcvtoealh.supabase.co:5432/postgres?sslmode=require"
+Can't reach database server at aws-1-us-east-2.pooler.supabase.com:5432
+Please make sure your database server is running at aws-1-us-east-2.pooler.supabase.com:5432.
 ```
 
-**OR For Local Development (Pooler - if direct doesn't work):**
-```env
-DATABASE_URL="postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_COMPLETE_PASSWORD@aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require"
+**This prevents the entire application from working, including email notifications.**
+
+## ✅ Solution Steps
+
+### Step 1: Check DATABASE_URL in Render
+
+1. Go to **Render Dashboard → mimmarketplace → Environment**
+2. Find `DATABASE_URL`
+3. Verify it's set correctly
+
+**Expected format:**
+```
+postgresql://postgres:[PASSWORD]@aws-1-us-east-2.pooler.supabase.com:5432/postgres?pgbouncer=true
 ```
 
-**Important:**
-- Replace `YOUR_COMPLETE_PASSWORD` with your actual Supabase database password
-- The password should NOT be truncated (no `...` at the end)
-- Keep the quotes around the connection string
-- Make sure there's only ONE `DATABASE_URL` line in your `.env` file
+### Step 2: Verify Supabase Database is Running
 
-### Step 3: Test the Connection
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Select your project
+3. Go to **Settings → Database**
+4. Check database status (should be "Active")
 
-Run the test script:
+### Step 3: Check Supabase Connection Pooling
+
+**Option A: Use Connection Pooler (Recommended)**
+```
+postgresql://postgres:[PASSWORD]@aws-1-us-east-2.pooler.supabase.com:5432/postgres?pgbouncer=true
+```
+
+**Option B: Use Direct Connection (If pooler fails)**
+```
+postgresql://postgres:[PASSWORD]@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+```
+
+### Step 4: Check IP Allowlist (Firewall)
+
+1. Go to Supabase Dashboard → **Settings → Database**
+2. Scroll to **Connection Pooling** or **Network Restrictions**
+3. Add Render's IP ranges:
+   - `74.220.48.0/24`
+   - `74.220.56.0/24`
+4. Or allow all IPs temporarily for testing: `0.0.0.0/0`
+
+### Step 5: Verify Password
+
+1. In Supabase Dashboard → **Settings → Database**
+2. Click **Reset Database Password** if needed
+3. Copy the new password
+4. Update `DATABASE_URL` in Render with the new password
+
+### Step 6: Test Connection
+
+After updating `DATABASE_URL`:
+1. Save changes in Render
+2. Service will auto-redeploy
+3. Check logs - should see successful database connection
+4. Then test email again
+
+## 🔍 Quick Diagnostic
+
+**Check if DATABASE_URL is set:**
 ```bash
-node scripts/test-db-connection.js
+# In Render Dashboard → Environment, verify:
+DATABASE_URL=postgresql://postgres:...
 ```
 
-If successful, you should see:
-```
-✅ Database connection successful!
-✅ Query test successful
-📊 Available tables: applications, audit_logs, badges, ...
-```
+**Common Issues:**
+- ❌ Missing `DATABASE_URL` → Add it
+- ❌ Wrong password → Reset in Supabase
+- ❌ IP blocked → Add Render IPs to Supabase firewall
+- ❌ Database paused → Resume in Supabase dashboard
 
-### Step 4: Start the Server
+## 🚀 After Fixing Database
 
-```bash
-npm run start:prod
-```
+Once database connection is fixed:
 
-## Alternative: Test Connection with psql First
+1. **Service will restart automatically**
+2. **Check logs** - should see no database errors
+3. **Test email again:**
+   ```bash
+   curl -X POST "https://mimmarketplace.onrender.com/applications/test-notification" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"salihalammari91@gmail.com","type":"needs_info"}'
+   ```
+4. **Check Render logs** for `[EMAIL]` messages
+5. **Check your inbox** for the email
 
-If you can connect with psql, use the same connection string format:
+## 📝 Summary
 
-```bash
-psql "postgresql://postgres.tjxotorfwaqzcvtoealh:YOUR_PASSWORD@db.tjxotorfwaqzcvtoealh.supabase.co:5432/postgres?sslmode=require"
-```
-
-If psql works but Node.js doesn't, it might be a network/firewall issue.
-
-## For Render Deployment
-
-Render uses a different connection string. See `RENDER_DATABASE_SETUP.md` for details.
-
-The key difference:
-- **Local**: Can use either direct or pooler
-- **Render**: MUST use direct connection (port 5432), NOT pooler (port 6543)
-
-## Still Having Issues?
-
-1. **Check your password is complete** - No truncation, no `...`
-2. **Verify Supabase is running** - Check Supabase dashboard
-3. **Test with psql** - If psql works, the issue is with Node.js/Prisma
-4. **Check firewall/network** - Some networks block database connections
-5. **Try pooler endpoint** - Sometimes pooler works when direct doesn't
-
+**Problem:** Database connection failure prevents app from running
+**Solution:** Fix `DATABASE_URL` in Render, verify Supabase is running, check firewall
+**After fix:** App will work, then email notifications will work
