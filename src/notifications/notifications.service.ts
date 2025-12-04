@@ -24,30 +24,30 @@ export class NotificationsService {
     this.fromEmail = this.configService.get<string>('NOTIFICATION_FROM_EMAIL') || 'noreply@mimmarketplace.com';
     this.fromName = this.configService.get<string>('NOTIFICATION_FROM_NAME') || 'MIM Marketplace';
 
-    // Check for Gmail configuration first
-    const gmailUser = this.configService.get<string>('GMAIL_USER');
-    const gmailAppPassword = this.configService.get<string>('GMAIL_APP_PASSWORD');
-
-    if (gmailUser && gmailAppPassword) {
-      this.gmailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: gmailUser,
-          pass: gmailAppPassword,
-        },
-      });
-      this.emailProvider = 'gmail';
-      this.logger.log(`Email notifications enabled via Gmail (${gmailUser})`);
+    // Prioritize Resend (more reliable) over Gmail
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (apiKey) {
+      this.resend = new Resend(apiKey);
+      this.emailProvider = 'resend';
+      this.logger.log('Email notifications enabled via Resend');
     } else {
-      // Fallback to Resend
-      const apiKey = this.configService.get<string>('RESEND_API_KEY');
-      if (apiKey) {
-        this.resend = new Resend(apiKey);
-        this.emailProvider = 'resend';
-        this.logger.log('Email notifications enabled via Resend');
+      // Fallback to Gmail if Resend not configured
+      const gmailUser = this.configService.get<string>('GMAIL_USER');
+      const gmailAppPassword = this.configService.get<string>('GMAIL_APP_PASSWORD');
+
+      if (gmailUser && gmailAppPassword) {
+        this.gmailTransporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: gmailUser,
+            pass: gmailAppPassword,
+          },
+        });
+        this.emailProvider = 'gmail';
+        this.logger.log(`Email notifications enabled via Gmail (${gmailUser})`);
       } else {
         this.emailProvider = 'none';
-        this.logger.warn('No email provider configured. Set GMAIL_USER/GMAIL_APP_PASSWORD or RESEND_API_KEY.');
+        this.logger.warn('No email provider configured. Set RESEND_API_KEY (recommended) or GMAIL_USER/GMAIL_APP_PASSWORD.');
       }
     }
   }
