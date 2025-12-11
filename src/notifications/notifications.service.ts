@@ -561,14 +561,25 @@ export class NotificationsService {
   }
 
   private normalizePhone(phone: string): string {
-    const digits = phone.replace(/[^\d+]/g, '');
-    if (digits.startsWith('+')) {
-      return digits;
+    // Remove all non-digit characters except +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    
+    // Remove all spaces
+    cleaned = cleaned.replace(/\s+/g, '');
+    
+    // If already starts with +, ensure it's properly formatted
+    if (cleaned.startsWith('+')) {
+      // Remove any extra + signs
+      cleaned = '+' + cleaned.replace(/^\+/g, '').replace(/[^\d]/g, '');
+      return cleaned;
     }
 
-    const cleaned = digits.replace(/^0+/, '');
+    // Remove leading zeros
+    const digits = cleaned.replace(/^0+/, '');
+    
+    // Add default country code if missing
     const defaultCountryCode = this.configService.get<string>('WHATSAPP_DEFAULT_COUNTRY_CODE') || '+212';
-    return `${defaultCountryCode}${cleaned}`;
+    return `${defaultCountryCode}${digits}`;
   }
 }
 
