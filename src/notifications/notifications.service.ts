@@ -307,53 +307,7 @@ export class NotificationsService {
       return;
     }
 
-    const evolutionApiUrl = this.configService.get<string>('EVOLUTION_API_URL');
-    const evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY');
-    const evolutionInstance = this.configService.get<string>('EVOLUTION_INSTANCE_NAME');
-
-    // Option 1: Evolution API (Free, self-hosted)
-    if (evolutionApiUrl && evolutionInstance) {
-      try {
-        // Remove trailing slash from URL
-        const baseUrl = evolutionApiUrl.replace(/\/$/, '');
-        const url = `${baseUrl}/message/sendText/${evolutionInstance}`;
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        
-        if (evolutionApiKey) {
-          headers['apikey'] = evolutionApiKey;
-        }
-
-        const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            number: phone,
-            text: message,
-          }),
-        });
-
-        if (response.ok) {
-          this.logger.log(
-            `[WHATSAPP] ✅ WhatsApp notification sent via Evolution API to ${phone} for application ${application.id}`,
-          );
-          return;
-        } else {
-          const error = await response.text();
-          this.logger.warn(
-            `[WHATSAPP] ⚠️ Evolution API failed for ${phone}: ${error}`,
-          );
-        }
-      } catch (error) {
-        this.logger.error(
-          `Failed to send WhatsApp via Evolution API for application ${application.id}: ${error.message}`,
-        );
-      }
-    }
-
-    // Option 2: WhatsApp Business API (if configured)
+    // Option 1: WhatsApp Business API (if configured)
     const whatsappBusinessApiUrl = this.configService.get<string>('WHATSAPP_BUSINESS_API_URL');
     const whatsappBusinessToken = this.configService.get<string>('WHATSAPP_BUSINESS_TOKEN');
     const whatsappBusinessPhoneId = this.configService.get<string>('WHATSAPP_BUSINESS_PHONE_ID');
@@ -395,47 +349,7 @@ export class NotificationsService {
       }
     }
 
-    // Option 3: ChatAPI (Direct API - Simple!)
-    const chatApiUrl = this.configService.get<string>('CHATAPI_URL');
-    const chatApiInstance = this.configService.get<string>('CHATAPI_INSTANCE_ID');
-    const chatApiToken = this.configService.get<string>('CHATAPI_TOKEN');
-
-    if (chatApiUrl && chatApiInstance && chatApiToken) {
-      try {
-        const baseUrl = chatApiUrl.replace(/\/$/, ''); // Remove trailing slash
-        const url = `${baseUrl}/sendMessage?token=${chatApiToken}`;
-
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phone: phone.replace('+', ''), // ChatAPI expects number without '+'
-            body: message,
-            instanceId: chatApiInstance,
-          }),
-        });
-
-        if (response.ok) {
-          this.logger.log(
-            `[WHATSAPP] ✅ WhatsApp notification sent via ChatAPI to ${phone} for application ${application.id}`,
-          );
-          return;
-        } else {
-          const error = await response.text();
-          this.logger.warn(
-            `[WHATSAPP] ⚠️ ChatAPI failed for ${phone}: ${error}`,
-          );
-        }
-      } catch (error) {
-        this.logger.error(
-          `Failed to send WhatsApp via ChatAPI for application ${application.id}: ${error.message}`,
-        );
-      }
-    }
-
-    // Option 4: Webhook-based services (Make.com, Zapier, etc.) - EASIEST!
+    // Option 2: Webhook-based services (Make.com, Zapier, etc.) - EASIEST!
     const whatsappWebhookUrl = this.configService.get<string>('WHATSAPP_WEBHOOK_URL');
     if (whatsappWebhookUrl) {
       try {
@@ -471,7 +385,7 @@ export class NotificationsService {
     }
 
     // If no WhatsApp service configured, log warning
-    if (!evolutionApiUrl && !whatsappBusinessApiUrl && !chatApiUrl && !whatsappWebhookUrl) {
+    if (!whatsappBusinessApiUrl && !whatsappWebhookUrl) {
       this.logger.warn(
         `[WHATSAPP] ⚠️ No WhatsApp service configured. Message prepared for ${phone} but not sent:\n${message}`,
       );
@@ -491,17 +405,9 @@ export class NotificationsService {
     const fromEmail = this.configService.get<string>('NOTIFICATION_FROM_EMAIL') || this.fromEmail;
     const fromName = this.configService.get<string>('NOTIFICATION_FROM_NAME') || this.fromName;
     
-    const evolutionApiUrl = this.configService.get<string>('EVOLUTION_API_URL');
-    const evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY');
-    const evolutionInstance = this.configService.get<string>('EVOLUTION_INSTANCE_NAME');
-    
     const whatsappBusinessApiUrl = this.configService.get<string>('WHATSAPP_BUSINESS_API_URL');
     const whatsappBusinessToken = this.configService.get<string>('WHATSAPP_BUSINESS_TOKEN');
     const whatsappBusinessPhoneId = this.configService.get<string>('WHATSAPP_BUSINESS_PHONE_ID');
-    
-    const chatApiUrl = this.configService.get<string>('CHATAPI_URL');
-    const chatApiInstance = this.configService.get<string>('CHATAPI_INSTANCE_ID');
-    const chatApiToken = this.configService.get<string>('CHATAPI_TOKEN');
     
     const whatsappWebhookUrl = this.configService.get<string>('WHATSAPP_WEBHOOK_URL');
     
@@ -522,29 +428,17 @@ export class NotificationsService {
         },
       },
       whatsapp: {
-        evolutionApi: {
-          enabled: !!(evolutionApiUrl && evolutionInstance),
-          url: evolutionApiUrl ? 'Set' : 'Not set',
-          instance: evolutionInstance || 'Not set',
-          apiKey: evolutionApiKey ? 'Set' : 'Not set',
-        },
         businessApi: {
           enabled: !!(whatsappBusinessApiUrl && whatsappBusinessToken && whatsappBusinessPhoneId),
           url: whatsappBusinessApiUrl ? 'Set' : 'Not set',
           token: whatsappBusinessToken ? 'Set' : 'Not set',
           phoneId: whatsappBusinessPhoneId || 'Not set',
         },
-        chatApi: {
-          enabled: !!(chatApiUrl && chatApiInstance && chatApiToken),
-          url: chatApiUrl ? 'Set' : 'Not set',
-          instance: chatApiInstance || 'Not set',
-          token: chatApiToken ? 'Set' : 'Not set',
-        },
         webhook: {
           enabled: !!whatsappWebhookUrl,
           url: whatsappWebhookUrl ? 'Set' : 'Not set',
         },
-        anyEnabled: !!(evolutionApiUrl || whatsappBusinessApiUrl || chatApiUrl || whatsappWebhookUrl),
+        anyEnabled: !!(whatsappBusinessApiUrl || whatsappWebhookUrl),
       },
     };
   }
