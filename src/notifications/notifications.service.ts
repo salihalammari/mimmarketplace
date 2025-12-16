@@ -248,18 +248,50 @@ export class NotificationsService {
           textBody = `سلام ${name}\nشكرا لتقديمك، لكن يؤسفنا أن نخبرك أن متجرك لا يستوفي جميع متطلبات التحقق حاليا.\nيمكنك إعادة التقديم لاحقا بعد التحسن.`;
           break;
 
-        case 'badge_activated':
+        case 'badge_activated': {
+          const submittedFields = (application.submitted_fields as any) || {};
+          const badgeCode = submittedFields.badgeCode;
+          const badgeLevel = submittedFields.badgeLevel;
+          const badgeUrl = badgeCode 
+            ? `https://mimmarketplace.onrender.com/badges/${badgeCode}`
+            : null;
+          
+          const levelName = badgeLevel === 1 
+            ? 'Verified Seller' 
+            : badgeLevel === 2 
+            ? 'Trusted Seller' 
+            : badgeLevel === 3 
+            ? 'Golden Seller' 
+            : 'Verified Seller';
+          
           subject = 'مبروك! شارتك الرقمية أصبحت فعالة - MIM Marketplace';
           htmlBody = `
             <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>مبروك ✅</h2>
               <p>${name}، شارتك الرقمية أصبحت فعالة.</p>
-              <p>يمكنك الحصول عليها من بريدك الإلكتروني واستعمالها في صفحات البيع الخاصة بك.</p>
+              <p><strong>مستوى الشارة:</strong> ${levelName} (Level ${badgeLevel || 1})</p>
+              ${badgeUrl ? `
+              <div style="background: #f0f4ff; padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; text-align: center;">
+                <p style="margin-bottom: 1rem;"><strong>رابط شارتك الرقمية:</strong></p>
+                <a href="${badgeUrl}" 
+                   style="display: inline-block; background: #667eea; color: white; padding: 0.75rem 1.5rem; 
+                          text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0.5rem 0;">
+                  عرض الشارة الرقمية
+                </a>
+                <p style="margin-top: 1rem; font-size: 0.875rem; color: #666;">
+                  أو انسخ الرابط: <br>
+                  <code style="background: white; padding: 0.5rem; border-radius: 4px; word-break: break-all;">${badgeUrl}</code>
+                </p>
+              </div>
+              ` : ''}
+              <p>يمكنك استعمال هذه الشارة في صفحات البيع الخاصة بك لإظهار حالة التحقق.</p>
+              <p><strong>مدة الصلاحية:</strong> 3 أشهر (من تاريخ التفعيل)</p>
               <p>شكراً لك،<br>فريق MIM Marketplace</p>
             </div>
           `;
-          textBody = `مبروك ✅\n${name}، شارتك الرقمية أصبحت فعالة.\nيمكنك الحصول عليها من بريدك الإلكتروني واستعمالها في صفحات البيع الخاصة بك.`;
+          textBody = `مبروك ✅\n${name}، شارتك الرقمية أصبحت فعالة.\n\nمستوى الشارة: ${levelName} (Level ${badgeLevel || 1})\n${badgeUrl ? `\nرابط شارتك الرقمية:\n${badgeUrl}\n` : ''}\nيمكنك استعمال هذه الشارة في صفحات البيع الخاصة بك لإظهار حالة التحقق.\n\nمدة الصلاحية: 3 أشهر (من تاريخ التفعيل)`;
           break;
+        }
       }
     }
 
@@ -291,8 +323,24 @@ export class NotificationsService {
         return `خبار كتفرح🤩\n${name}، لقد تم قبول طلبك من أجل Mim Verified.\nستتوصل بشارتك الرقمية قريبا🥳`;
       case 'rejected':
         return `سلام ${name}\nشكرا لتقديمك، لكن يؤسفنا أن نخبرك أن متجرك لا يستوفي جميع متطلبات التحقق حاليا.\nيمكنك إعادة التقديم لاحقا بعد التحسن.`;
-      case 'badge_activated':
-        return `مبروك ✅\n${name}، شارتك الرقمية أصبحت فعالة.\nيمكنك الحصول عليها من بريدك الإلكتروني واستعمالها في صفحات البيع الخاصة بك.`;
+      case 'badge_activated': {
+        const submittedFields = (application.submitted_fields as any) || {};
+        const badgeCode = submittedFields.badgeCode;
+        const badgeLevel = submittedFields.badgeLevel;
+        const badgeUrl = badgeCode 
+          ? `https://mimmarketplace.onrender.com/badges/${badgeCode}`
+          : null;
+        
+        const levelName = badgeLevel === 1 
+          ? 'Verified Seller' 
+          : badgeLevel === 2 
+          ? 'Trusted Seller' 
+          : badgeLevel === 3 
+          ? 'Golden Seller' 
+          : 'Verified Seller';
+        
+        return `مبروك ✅\n${name}، شارتك الرقمية أصبحت فعالة.\n\nمستوى الشارة: ${levelName} (Level ${badgeLevel || 1})\n${badgeUrl ? `\nرابط شارتك الرقمية:\n${badgeUrl}\n` : ''}\nيمكنك استعمال هذه الشارة في صفحات البيع الخاصة بك لإظهار حالة التحقق.\n\nمدة الصلاحية: 3 أشهر`;
+      }
       default:
         return null;
     }

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIM Marketplace - Badge Verification</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 3rem;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 0.5rem;
+      font-size: 1.75rem;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+
+    .badge-container {
+      margin: 2rem 0;
+      padding: 2rem;
+      background: #f9fafb;
+      border-radius: 12px;
+    }
+
+    .badge-image {
+      max-width: 300px;
+      width: 100%;
+      height: auto;
+      margin: 0 auto;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .badge-info {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 8px;
+      text-align: right;
+    }
+
+    .badge-info-item {
+      margin: 0.75rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge-info-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .badge-info-value {
+      color: #333;
+      font-weight: 500;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    .status-active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-suspended {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-revoked {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-expired {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+
+    .loading {
+      color: #666;
+      font-size: 1.125rem;
+    }
+
+    .validity-info {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #f0f4ff;
+      border-radius: 8px;
+      color: #667eea;
+      font-size: 0.875rem;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">MIM Marketplace</div>
+    <h1>التحقق من الشارة الرقمية</h1>
+    <p class="subtitle">Badge Verification</p>
+
+    <div id="loading" class="loading">جاري التحقق من الشارة...</div>
+    <div id="error" class="error-message" style="display: none;"></div>
+    <div id="badgeContent" style="display: none;">
+      <div class="badge-container">
+        <img id="badgeImage" src="" alt="Verification Badge" class="badge-image" style="display: none;">
+        <div id="badgeInfo" class="badge-info"></div>
+        <div id="statusBadge" class="status-badge"></div>
+      </div>
+      <div id="validityInfo" class="validity-info"></div>
+    </div>
+
+    <div class="footer">
+      <p>MIM Marketplace - نظام التحقق من البائعين</p>
+      <p><a href="/">العودة للصفحة الرئيسية</a></p>
+    </div>
+  </div>
+
+  <script>
+    // Get badge code from URL
+    const pathParts = window.location.pathname.split('/');
+    const badgeCode = pathParts[pathParts.length - 1];
+
+    // API URL
+    const API_URL = window.location.origin.includes('render.com') 
+      ? window.location.origin 
+      : (window.location.origin.includes('localhost') 
+          ? 'http://localhost:3000' 
+          : 'https://mimmarketplace.onrender.com');
+
+    async function loadBadge() {
+      const loading = document.getElementById('loading');
+      const error = document.getElementById('error');
+      const badgeContent = document.getElementById('badgeContent');
+
+      if (!badgeCode || badgeCode === 'badge-verification.html') {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        error.textContent = 'رمز الشارة غير صحيح. يرجى التحقق من الرابط.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/badges/code/${badgeCode}`);
+        
+        if (!response.ok) {
+          throw new Error('Badge not found');
+        }
+
+        const badge = await response.json();
+        displayBadge(badge);
+      } catch (err) {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        error.textContent = 'الشارة غير موجودة أو الرابط غير صحيح.';
+      }
+    }
+
+    function displayBadge(badge) {
+      const loading = document.getElementById('loading');
+      const error = document.getElementById('error');
+      const badgeContent = document.getElementById('badgeContent');
+      const badgeImage = document.getElementById('badgeImage');
+      const badgeInfo = document.getElementById('badgeInfo');
+      const statusBadge = document.getElementById('statusBadge');
+      const validityInfo = document.getElementById('validityInfo');
+
+      loading.style.display = 'none';
+      error.style.display = 'none';
+      badgeContent.style.display = 'block';
+
+      const seller = badge.sellers || {};
+      const level = seller.level || 'verified';
+      const levelNames = {
+        'verified': { name: 'Verified Seller', ar: 'بائع موثق', level: 1 },
+        'trusted': { name: 'Trusted Seller', ar: 'بائع موثوق', level: 2 },
+        'golden': { name: 'Golden Seller', ar: 'بائع ذهبي', level: 3 }
+      };
+
+      const levelInfo = levelNames[level] || levelNames['verified'];
+
+      // Set badge image based on level
+      const imagePath = `images/badges/${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
+      badgeImage.src = imagePath;
+      badgeImage.onload = () => {
+        badgeImage.style.display = 'block';
+      };
+      badgeImage.onerror = () => {
+        badgeImage.style.display = 'none';
+      };
+
+      // Display badge information
+      badgeInfo.innerHTML = `
+        <div class="badge-info-item">
+          <span class="badge-info-label">اسم البائع:</span>
+          <span class="badge-info-value">${seller.name || 'غير متوفر'}</span>
+        </div>
+        <div class="badge-info-item">
+          <span class="badge-info-label">مستوى الشارة:</span>
+          <span class="badge-info-value">${levelInfo.ar} (${levelInfo.name})</span>
+        </div>
+        <div class="badge-info-item">
+          <span class="badge-info-label">رمز الشارة:</span>
+          <span class="badge-info-value">${badge.code}</span>
+        </div>
+        <div class="badge-info-item">
+          <span class="badge-info-label">تاريخ الإصدار:</span>
+          <span class="badge-info-value">${new Date(badge.issued_at).toLocaleDateString('ar-SA')}</span>
+        </div>
+      `;
+
+      // Status badge
+      const status = badge.status || 'active';
+      const statusText = {
+        'active': { text: 'نشط', en: 'Active', class: 'status-active' },
+        'suspended': { text: 'معلق', en: 'Suspended', class: 'status-suspended' },
+        'revoked': { text: 'ملغي', en: 'Revoked', class: 'status-revoked' },
+        'expired': { text: 'منتهي', en: 'Expired', class: 'status-expired' }
+      };
+
+      const statusInfo = statusText[status] || statusText['active'];
+      statusBadge.textContent = `${statusInfo.text} (${statusInfo.en})`;
+      statusBadge.className = `status-badge ${statusInfo.class}`;
+
+      // Validity info
+      const validUntil = new Date(badge.valid_until);
+      const now = new Date();
+      const isValid = validUntil > now && status === 'active';
+
+      if (isValid) {
+        validityInfo.innerHTML = `
+          <strong>✅ الشارة صالحة</strong><br>
+          صالحة حتى: ${validUntil.toLocaleDateString('ar-SA')}
+        `;
+        validityInfo.style.background = '#d1fae5';
+        validityInfo.style.color = '#065f46';
+      } else if (validUntil <= now) {
+        validityInfo.innerHTML = `
+          <strong>⚠️ الشارة منتهية الصلاحية</strong><br>
+          انتهت في: ${validUntil.toLocaleDateString('ar-SA')}
+        `;
+        validityInfo.style.background = '#fef3c7';
+        validityInfo.style.color = '#92400e';
+      } else {
+        validityInfo.innerHTML = `
+          <strong>❌ الشارة غير نشطة</strong><br>
+          الحالة: ${statusInfo.text}
+        `;
+        validityInfo.style.background = '#fee2e2';
+        validityInfo.style.color = '#991b1b';
+      }
+    }
+
+    // Load badge on page load
+    loadBadge();
+  </script>
+</body>
+</html>
+

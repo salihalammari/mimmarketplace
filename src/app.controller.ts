@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Res, Param } from '@nestjs/common';
 import { Response } from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
@@ -49,6 +49,21 @@ export class AppController {
     const rootPath = join(process.cwd(), 'admin-dashboard', 'index.html');
     const path = fs.existsSync(distPath) ? distPath : rootPath;
     res.sendFile(path);
+  }
+
+  @Get('badges/:code')
+  getBadgeVerification(@Param('code') code: string, @Res() res: Response) {
+    // Serve badge verification page
+    const distPath = join(__dirname, '..', 'admin-dashboard', 'badge-verification.html');
+    const rootPath = join(process.cwd(), 'admin-dashboard', 'badge-verification.html');
+    const path = fs.existsSync(distPath) ? distPath : rootPath;
+    
+    if (fs.existsSync(path)) {
+      return res.sendFile(path);
+    }
+    
+    // Fallback: 404
+    res.status(404).send('Badge verification page not found');
   }
 }
 
