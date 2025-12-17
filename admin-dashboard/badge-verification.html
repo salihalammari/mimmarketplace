@@ -185,6 +185,14 @@
   </div>
 
   <script>
+    // Format date to European format (DD/MM/YYYY)
+    function formatEuropeanDate(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
     // Get badge code from URL
     const pathParts = window.location.pathname.split('/');
     const badgeCode = pathParts[pathParts.length - 1];
@@ -247,8 +255,8 @@
 
       const levelInfo = levelNames[level] || levelNames['verified'];
 
-      // Set badge image based on level
-      const imagePath = `images/badges/${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
+      // Set badge image based on level (use absolute path from root)
+      const imagePath = `/admin-dashboard/images/badges/${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
       badgeImage.src = imagePath;
       badgeImage.onload = () => {
         badgeImage.style.display = 'block';
@@ -273,7 +281,7 @@
         </div>
         <div class="badge-info-item">
           <span class="badge-info-label">تاريخ الإصدار:</span>
-          <span class="badge-info-value">${new Date(badge.issued_at).toLocaleDateString('ar-SA')}</span>
+          <span class="badge-info-value">${formatEuropeanDate(new Date(badge.issued_at))}</span>
         </div>
       `;
 
@@ -298,14 +306,14 @@
       if (isValid) {
         validityInfo.innerHTML = `
           <strong>✅ الشارة صالحة</strong><br>
-          صالحة حتى: ${validUntil.toLocaleDateString('ar-SA')}
+          صالحة حتى: ${formatEuropeanDate(validUntil)}
         `;
         validityInfo.style.background = '#d1fae5';
         validityInfo.style.color = '#065f46';
       } else if (validUntil <= now) {
         validityInfo.innerHTML = `
           <strong>⚠️ الشارة منتهية الصلاحية</strong><br>
-          انتهت في: ${validUntil.toLocaleDateString('ar-SA')}
+          انتهت في: ${formatEuropeanDate(validUntil)}
         `;
         validityInfo.style.background = '#fef3c7';
         validityInfo.style.color = '#92400e';
