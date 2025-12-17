@@ -19,22 +19,6 @@ export class BadgesController {
     return this.badgesService.getBadgeByCode(code);
   }
 
-  @Get(':code')
-  async getBadgeVerificationPage(@Param('code') code: string, @Res() res: Response) {
-    // Serve HTML verification page
-    const distPath = join(__dirname, '..', '..', 'admin-dashboard', 'badge-verification.html');
-    const rootPath = join(process.cwd(), 'admin-dashboard', 'badge-verification.html');
-    const path = fs.existsSync(distPath) ? distPath : rootPath;
-    
-    if (fs.existsSync(path)) {
-      return res.sendFile(path);
-    }
-    
-    // Fallback: return JSON if HTML not found
-    const badge = await this.badgesService.getBadgeByCode(code);
-    return res.json(badge);
-  }
-
   @Get('seller/:sellerId')
   async getBadgesBySeller(@Param('sellerId') sellerId: string) {
     return this.badgesService.getBadgesBySeller(sellerId);

@@ -51,6 +51,17 @@ export class AppController {
     res.sendFile(path);
   }
 
+  @Get('badges')
+  getBadgeInfo(@Res() res: Response) {
+    // Show instructions if accessing /badges without code
+    res.status(400).json({
+      message: 'Badge code is required',
+      error: 'Please provide a badge code in the URL',
+      example: 'https://mimmarketplace.onrender.com/badges/VABC123XYZ',
+      apiEndpoint: 'GET /badges/code/:code',
+    });
+  }
+
   @Get('badges/:code')
   getBadgeVerification(@Param('code') code: string, @Res() res: Response) {
     // Serve badge verification page
