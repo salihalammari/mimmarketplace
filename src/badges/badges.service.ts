@@ -12,14 +12,20 @@ export class BadgesService {
   ) {}
 
   async createBadge(applicationId: string, level: number = 1) {
-    // First, create or get seller
-    const application = await this.prisma.applications.findUnique({
-      where: { id: applicationId },
-    });
+    try {
+      this.logger.log(`Starting badge creation for application ${applicationId} with level ${level}`);
+      
+      // First, create or get seller
+      const application = await this.prisma.applications.findUnique({
+        where: { id: applicationId },
+      });
 
-    if (!application) {
-      throw new Error('Application not found');
-    }
+      if (!application) {
+        this.logger.error(`Application not found: ${applicationId}`);
+        throw new Error('Application not found');
+      }
+
+      this.logger.log(`Application found: ${application.full_name} (${application.email})`);
 
     // Check if seller already exists (by name)
     let seller = await this.prisma.sellers.findFirst({
@@ -30,15 +36,24 @@ export class BadgesService {
 
     // Create seller if doesn't exist
     if (!seller) {
-      seller = await this.prisma.sellers.create({
-        data: {
-          name: application.full_name,
-          category: application.category,
-          city: (application.submitted_fields as any)?.city || null,
-          shop_url: (application.submitted_fields as any)?.mainSalesPageLink || null,
-          level: this.getLevelString(level),
-        },
-      });
+      this.logger.log(`Creating new seller: ${application.full_name}`);
+      try {
+        seller = await this.prisma.sellers.create({
+          data: {
+            name: application.full_name,
+            category: application.category || 'general',
+            city: (application.submitted_fields as any)?.city || null,
+            shop_url: (application.submitted_fields as any)?.mainSalesPageLink || null,
+            level: this.getLevelString(level),
+          },
+        });
+        this.logger.log(`Seller created: ${seller.id}`);
+      } catch (error) {
+        this.logger.error(`Failed to create seller: ${error.message}`, error.stack);
+        throw new Error(`Failed to create seller: ${error.message}`);
+      }
+    } else {
+      this.logger.log(`Using existing seller: ${seller.id} (${seller.name})`);
     }
 
     // Generate unique badge code
@@ -73,13 +88,13 @@ export class BadgesService {
       },
     });
 
-    // Create audit log
+    // Create audit log (use applicationId as entity_id due to foreign key constraint)
     await this.prisma.audit_logs.create({
       data: {
         entity_type: 'badge',
-        entity_id: badge.id,
+        entity_id: applicationId, // Use applicationId, not badge.id (FK constraint)
         action: 'badge_created',
-        meta: { applicationId, level, badgeCode },
+        meta: { applicationId, badgeId: badge.id, level, badgeCode },
       },
     });
 
@@ -101,12 +116,20 @@ export class BadgesService {
       // Don't fail badge creation if notification fails
     }
 
-    return {
+    const result = {
       ...badge,
       seller,
       application: updatedApplication,
       badgeUrl,
     };
+
+    this.logger.log(`Badge creation completed successfully: ${badge.code}`);
+    
+    return result;
+    } catch (error) {
+      this.logger.error(`Error in createBadge: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   async getBadgeByCode(code: string) {
@@ -140,6 +163,12 @@ export class BadgesService {
       throw new Error('Badge not found');
     }
 
+    // Find application by seller name for audit log
+    const application = await this.prisma.applications.findFirst({
+      where: { full_name: badge.sellers.name },
+      orderBy: { created_at: 'desc' },
+    });
+
     const validUntil = new Date();
     validUntil.setMonth(validUntil.getMonth() + 3);
 
@@ -151,15 +180,17 @@ export class BadgesService {
       },
     });
 
-    // Create audit log
-    await this.prisma.audit_logs.create({
-      data: {
-        entity_type: 'badge',
-        entity_id: badge.id,
-        action: 'badge_renewed',
-        meta: { badgeId, validUntil: validUntil.toISOString() },
-      },
-    });
+    // Create audit log (use applicationId if found, otherwise skip FK constraint)
+    if (application) {
+      await this.prisma.audit_logs.create({
+        data: {
+          entity_type: 'badge',
+          entity_id: application.id,
+          action: 'badge_renewed',
+          meta: { badgeId, validUntil: validUntil.toISOString() },
+        },
+      });
+    }
 
     this.logger.log(`Badge renewed: ${badge.code} for seller ${badge.sellers.name}`);
 
@@ -183,15 +214,23 @@ export class BadgesService {
       },
     });
 
-    // Create audit log
-    await this.prisma.audit_logs.create({
-      data: {
-        entity_type: 'badge',
-        entity_id: badge.id,
-        action: 'badge_suspended',
-        meta: { badgeId, reason: reason || 'No reason provided' },
-      },
+    // Find application by seller name for audit log
+    const application = await this.prisma.applications.findFirst({
+      where: { full_name: badge.sellers.name },
+      orderBy: { created_at: 'desc' },
     });
+
+    // Create audit log (use applicationId if found)
+    if (application) {
+      await this.prisma.audit_logs.create({
+        data: {
+          entity_type: 'badge',
+          entity_id: application.id,
+          action: 'badge_suspended',
+          meta: { badgeId, reason: reason || 'No reason provided' },
+        },
+      });
+    }
 
     this.logger.warn(`Badge suspended: ${badge.code} for seller ${badge.sellers.name}. Reason: ${reason || 'No reason provided'}`);
 
@@ -215,15 +254,23 @@ export class BadgesService {
       },
     });
 
-    // Create audit log
-    await this.prisma.audit_logs.create({
-      data: {
-        entity_type: 'badge',
-        entity_id: badge.id,
-        action: 'badge_revoked',
-        meta: { badgeId, reason },
-      },
+    // Find application by seller name for audit log
+    const application = await this.prisma.applications.findFirst({
+      where: { full_name: badge.sellers.name },
+      orderBy: { created_at: 'desc' },
     });
+
+    // Create audit log (use applicationId if found)
+    if (application) {
+      await this.prisma.audit_logs.create({
+        data: {
+          entity_type: 'badge',
+          entity_id: application.id,
+          action: 'badge_revoked',
+          meta: { badgeId, reason },
+        },
+      });
+    }
 
     this.logger.warn(`Badge revoked: ${badge.code} for seller ${badge.sellers.name}. Reason: ${reason}`);
 
@@ -318,15 +365,23 @@ export class BadgesService {
       },
     });
 
-    // Create audit log
-    await this.prisma.audit_logs.create({
-      data: {
-        entity_type: 'badge',
-        entity_id: badge.id,
-        action: 'badge_upgraded',
-        meta: { badgeId, oldLevel: badge.sellers.level, newLevel: this.getLevelString(newLevel) },
-      },
+    // Find application by seller name for audit log
+    const application = await this.prisma.applications.findFirst({
+      where: { full_name: badge.sellers.name },
+      orderBy: { created_at: 'desc' },
     });
+
+    // Create audit log (use applicationId if found)
+    if (application) {
+      await this.prisma.audit_logs.create({
+        data: {
+          entity_type: 'badge',
+          entity_id: application.id,
+          action: 'badge_upgraded',
+          meta: { badgeId, oldLevel: badge.sellers.level, newLevel: this.getLevelString(newLevel) },
+        },
+      });
+    }
 
     this.logger.log(`Badge upgraded: ${badge.code} -> ${newBadgeCode} for seller ${badge.sellers.name} to level ${newLevel}`);
 

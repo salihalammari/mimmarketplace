@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, Res, HttpException, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
@@ -6,12 +6,37 @@ import { BadgesService } from './badges.service';
 
 @Controller('badges')
 export class BadgesController {
+  private readonly logger = new Logger(BadgesController.name);
+
   constructor(private readonly badgesService: BadgesService) {}
 
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async createBadge(@Body() body: { applicationId: string; level?: number }) {
-    return this.badgesService.createBadge(body.applicationId, body.level || 1);
+    try {
+      if (!body.applicationId) {
+        throw new HttpException('Application ID is required', HttpStatus.BAD_REQUEST);
+      }
+
+      this.logger.log(`Creating badge for application ${body.applicationId} with level ${body.level || 1}`);
+      
+      const result = await this.badgesService.createBadge(body.applicationId, body.level || 1);
+      
+      this.logger.log(`Badge created successfully: ${(result as any).code || 'unknown'}`);
+      
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to create badge: ${error.message}`, error.stack);
+      
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
+      throw new HttpException(
+        `Failed to create badge: ${error.message || 'Unknown error'}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Get('code/:code')
