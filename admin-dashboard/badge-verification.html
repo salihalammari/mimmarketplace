@@ -55,16 +55,34 @@
       padding: 2rem;
       background: #f9fafb;
       border-radius: 12px;
+      text-align: center;
+    }
+
+    .badge-image-container {
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 300px;
     }
 
     .badge-image {
-      max-width: 300px;
+      max-width: 350px;
       width: 100%;
       height: auto;
       margin: 0 auto;
       display: block;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
+    }
+
+    .badge-image:hover {
+      transform: scale(1.05);
     }
 
     .badge-info {
@@ -171,7 +189,9 @@
     <div id="error" class="error-message" style="display: none;"></div>
     <div id="badgeContent" style="display: none;">
       <div class="badge-container">
-        <img id="badgeImage" src="" alt="Verification Badge" class="badge-image" style="display: none;">
+        <div class="badge-image-container">
+          <img id="badgeImage" src="" alt="Verification Badge" class="badge-image" style="display: none;">
+        </div>
         <div id="badgeInfo" class="badge-info"></div>
         <div id="statusBadge" class="status-badge"></div>
       </div>
@@ -255,15 +275,43 @@
 
       const levelInfo = levelNames[level] || levelNames['verified'];
 
-      // Set badge image based on level (use absolute path from root)
-      const imagePath = `/admin-dashboard/images/badges/${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
-      badgeImage.src = imagePath;
+      // Set badge image based on level (try multiple paths)
+      const imageName = `${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
+      const imagePaths = [
+        `/admin-dashboard/images/badges/${imageName}`,
+        `images/badges/${imageName}`,
+        `../images/badges/${imageName}`,
+        `./images/badges/${imageName}`
+      ];
+      
+      let imageLoaded = false;
+      let currentPathIndex = 0;
+      
+      function tryLoadImage() {
+        if (currentPathIndex >= imagePaths.length) {
+          console.warn('Badge image not found at any path');
+          badgeImage.style.display = 'none';
+          return;
+        }
+        
+        badgeImage.src = imagePaths[currentPathIndex];
+      }
+      
       badgeImage.onload = () => {
         badgeImage.style.display = 'block';
+        imageLoaded = true;
       };
+      
       badgeImage.onerror = () => {
-        badgeImage.style.display = 'none';
+        currentPathIndex++;
+        if (currentPathIndex < imagePaths.length) {
+          tryLoadImage();
+        } else {
+          badgeImage.style.display = 'none';
+        }
       };
+      
+      tryLoadImage();
 
       // Display badge information
       badgeInfo.innerHTML = `

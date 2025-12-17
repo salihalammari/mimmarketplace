@@ -430,10 +430,40 @@
 
     .badge-preview {
       text-align: center;
-      padding: 1rem;
-      background: #f9fafb;
-      border-radius: 8px;
-      margin: 1rem 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      border: 2px solid #e5e7eb;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .badge-preview h3 {
+      margin-bottom: 1rem;
+      color: #333;
+      font-size: 1.25rem;
+    }
+
+    .badge-preview img {
+      max-width: 300px;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      margin: 1rem auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .badge-preview img:hover {
+      transform: scale(1.05);
+    }
+
+    .badge-preview p {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: #666;
+      font-weight: 500;
     }
 
     .badge-preview img {
@@ -591,9 +621,9 @@
             </div>
           </div>
           <div id="badgePreview" class="badge-preview" style="display: none;">
-            <h3>Badge Preview</h3>
-            <img id="badgePreviewImage" src="" alt="Badge Preview" style="display: none;">
-            <p id="badgePreviewText" style="margin-top: 0.5rem; color: #666;"></p>
+            <h3>🎖️ Badge Preview</h3>
+            <img id="badgePreviewImage" src="" alt="Badge Preview" style="display: none; max-width: 300px; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); margin: 1rem auto; display: block;">
+            <p id="badgePreviewText" style="margin-top: 1rem; font-size: 1rem; color: #666; font-weight: 500;"></p>
           </div>
           <input type="hidden" id="badgeLevel" value="1">
         </div>
@@ -948,17 +978,18 @@
           ` : ''}
           ${submittedFields.badgeCode || submittedFields.badgeId ? `
           <div class="form-group">
-            <label>Verification Badge</label>
-            <div class="badge-preview">
+            <label>🎖️ Verification Badge</label>
+            <div class="badge-preview" style="padding: 1.5rem; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-radius: 12px; border: 2px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center;">
               ${submittedFields.badgeLevel ? `
                 <img src="images/badges/${submittedFields.badgeLevel === 1 ? 'verified' : submittedFields.badgeLevel === 2 ? 'trusted' : 'golden'}-seller.png" 
                      alt="${submittedFields.badgeLevel === 1 ? 'Verified' : submittedFields.badgeLevel === 2 ? 'Trusted' : 'Golden'} Seller Badge" 
-                     class="badge-image"
+                     style="max-width: 300px; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); margin: 0 auto 1rem; display: block;"
                      onerror="this.style.display='none'">
-                <div class="badge-info">
-                  <strong>Level ${submittedFields.badgeLevel}:</strong> ${submittedFields.badgeLevel === 1 ? 'Verified Seller' : submittedFields.badgeLevel === 2 ? 'Trusted Seller' : 'Golden Seller'}<br>
-                  ${submittedFields.badgeCode ? `Badge Code: ${submittedFields.badgeCode}<br>` : ''}
-                  ${submittedFields.badgeActivatedAt ? `Activated: ${new Date(submittedFields.badgeActivatedAt).toLocaleDateString()}` : ''}
+                <div class="badge-info" style="text-align: center; padding: 1rem; background: white; border-radius: 8px;">
+                  <strong style="font-size: 1.1rem; color: #333;">Level ${submittedFields.badgeLevel}:</strong> 
+                  <span style="color: #667eea; font-weight: 600;">${submittedFields.badgeLevel === 1 ? 'Verified Seller' : submittedFields.badgeLevel === 2 ? 'Trusted Seller' : 'Golden Seller'}</span><br>
+                  ${submittedFields.badgeCode ? `<br><strong>Badge Code:</strong> <code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px; font-family: monospace;">${submittedFields.badgeCode}</code><br>` : ''}
+                  ${submittedFields.badgeActivatedAt ? `<br><strong>Activated:</strong> ${new Date(submittedFields.badgeActivatedAt).toLocaleDateString('en-GB')}` : ''}
                 </div>
               ` : `
                 <p>Badge created (Level information not available)</p>
@@ -1094,18 +1125,45 @@
 
       const badge = badgeNames[level];
       if (badge) {
-        previewImage.src = `images/badges/${badge.file}`;
+        // Try multiple paths to find the image
+        const imagePaths = [
+          `images/badges/${badge.file}`,
+          `/admin-dashboard/images/badges/${badge.file}`,
+          `../images/badges/${badge.file}`,
+          `./images/badges/${badge.file}`
+        ];
+        
+        let currentPathIndex = 0;
+        
+        function tryLoadPreviewImage() {
+          if (currentPathIndex >= imagePaths.length) {
+            console.warn('Badge preview image not found');
+            previewImage.style.display = 'none';
+            return;
+          }
+          
+          previewImage.src = imagePaths[currentPathIndex];
+        }
+        
         previewImage.alt = `${badge.name} Badge`;
         previewText.textContent = `Level ${level}: ${badge.name} (${badge.color})`;
         previewDiv.style.display = 'block';
         
-        // Show image if it loads, hide if it doesn't
+        // Show image if it loads, try next path if it doesn't
         previewImage.onload = () => {
           previewImage.style.display = 'block';
         };
+        
         previewImage.onerror = () => {
-          previewImage.style.display = 'none';
+          currentPathIndex++;
+          if (currentPathIndex < imagePaths.length) {
+            tryLoadPreviewImage();
+          } else {
+            previewImage.style.display = 'none';
+          }
         };
+        
+        tryLoadPreviewImage();
       }
     }
 
