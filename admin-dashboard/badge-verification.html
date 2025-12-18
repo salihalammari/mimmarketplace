@@ -60,14 +60,15 @@
 
     .badge-image-container {
       margin: 1.5rem 0;
-      padding: 1.5rem;
+      padding: 2rem;
       background: white;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.1);
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 300px;
+      min-height: 350px;
+      text-align: center;
     }
 
     .badge-image {
@@ -277,40 +278,46 @@
 
       // Set badge image based on level (try multiple paths)
       const imageName = `${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
+      const baseUrl = window.location.origin;
       const imagePaths = [
+        `${baseUrl}/admin-dashboard/images/badges/${imageName}`,
+        `${baseUrl}/images/badges/${imageName}`,
         `/admin-dashboard/images/badges/${imageName}`,
+        `/images/badges/${imageName}`,
         `images/badges/${imageName}`,
-        `../images/badges/${imageName}`,
-        `./images/badges/${imageName}`
+        `../images/badges/${imageName}`
       ];
       
-      let imageLoaded = false;
       let currentPathIndex = 0;
       
       function tryLoadImage() {
         if (currentPathIndex >= imagePaths.length) {
-          console.warn('Badge image not found at any path');
+          console.warn('Badge image not found at any path. Tried:', imagePaths);
           badgeImage.style.display = 'none';
           return;
         }
         
+        console.log(`Trying to load badge image from: ${imagePaths[currentPathIndex]}`);
         badgeImage.src = imagePaths[currentPathIndex];
       }
       
       badgeImage.onload = () => {
+        console.log(`✅ Badge image loaded successfully from: ${badgeImage.src}`);
         badgeImage.style.display = 'block';
-        imageLoaded = true;
       };
       
       badgeImage.onerror = () => {
+        console.warn(`❌ Failed to load badge image from: ${imagePaths[currentPathIndex]}`);
         currentPathIndex++;
         if (currentPathIndex < imagePaths.length) {
           tryLoadImage();
         } else {
+          console.error('All image paths failed. Badge image will not be displayed.');
           badgeImage.style.display = 'none';
         }
       };
       
+      // Start loading the image
       tryLoadImage();
 
       // Display badge information
