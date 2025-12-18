@@ -277,13 +277,14 @@
       const levelInfo = levelNames[level] || levelNames['verified'];
 
       // Set badge image based on level (try multiple paths)
+      // Note: Static files are served with /admin prefix (see main.ts)
       const imageName = `${levelInfo.level === 1 ? 'verified' : levelInfo.level === 2 ? 'trusted' : 'golden'}-seller.png`;
       const baseUrl = window.location.origin;
       const imagePaths = [
+        `${baseUrl}/admin/images/badges/${imageName}`,  // Correct path - static files served with /admin prefix
         `${baseUrl}/admin-dashboard/images/badges/${imageName}`,
-        `${baseUrl}/images/badges/${imageName}`,
+        `/admin/images/badges/${imageName}`,  // Correct path without baseUrl
         `/admin-dashboard/images/badges/${imageName}`,
-        `/images/badges/${imageName}`,
         `images/badges/${imageName}`,
         `../images/badges/${imageName}`
       ];
