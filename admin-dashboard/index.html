@@ -602,19 +602,19 @@
           <label>Select Badge Level</label>
           <div class="badge-level-selector">
             <div class="badge-level-btn level-1 active" data-level="1" onclick="selectBadgeLevel(1)">
-              <img src="images/badges/verified-seller.png" alt="Verified Seller Badge" class="badge-image" onerror="this.style.display='none'">
+              <img src="images/badges/verified-seller.png" alt="Verified Seller Badge" class="badge-image" style="display: block; max-width: 150px; width: 100%; height: auto; margin: 0 auto 0.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none'; console.error('Failed to load verified-seller.png');">
               <h4>Level 1</h4>
               <p>Verified Seller</p>
               <div class="badge-info">Entry-level verification badge</div>
             </div>
             <div class="badge-level-btn level-2" data-level="2" onclick="selectBadgeLevel(2)">
-              <img src="images/badges/trusted-seller.png" alt="Trusted Seller Badge" class="badge-image" onerror="this.style.display='none'">
+              <img src="images/badges/trusted-seller.png" alt="Trusted Seller Badge" class="badge-image" style="display: block; max-width: 150px; width: 100%; height: auto; margin: 0 auto 0.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none'; console.error('Failed to load trusted-seller.png');">
               <h4>Level 2</h4>
               <p>Trusted Seller</p>
               <div class="badge-info">3+ months verified status</div>
             </div>
             <div class="badge-level-btn level-3" data-level="3" onclick="selectBadgeLevel(3)">
-              <img src="images/badges/golden-seller.png" alt="Golden Seller Badge" class="badge-image" onerror="this.style.display='none'">
+              <img src="images/badges/golden-seller.png" alt="Golden Seller Badge" class="badge-image" style="display: block; max-width: 150px; width: 100%; height: auto; margin: 0 auto 0.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none'; console.error('Failed to load golden-seller.png');">
               <h4>Level 3</h4>
               <p>Golden Seller</p>
               <div class="badge-info">Highest-level badge</div>
@@ -622,7 +622,7 @@
           </div>
           <div id="badgePreview" class="badge-preview" style="display: none;">
             <h3>🎖️ Badge Preview</h3>
-            <img id="badgePreviewImage" src="" alt="Badge Preview" style="display: none; max-width: 300px; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); margin: 1rem auto; display: block;">
+            <img id="badgePreviewImage" src="" alt="Badge Preview" style="max-width: 300px; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); margin: 1rem auto; display: none;">
             <p id="badgePreviewText" style="margin-top: 1rem; font-size: 1rem; color: #666; font-weight: 500;"></p>
           </div>
           <input type="hidden" id="badgeLevel" value="1">
@@ -1152,6 +1152,7 @@
         // Show image if it loads, try next path if it doesn't
         previewImage.onload = () => {
           previewImage.style.display = 'block';
+          previewImage.style.visibility = 'visible';
         };
         
         previewImage.onerror = () => {
@@ -1159,11 +1160,15 @@
           if (currentPathIndex < imagePaths.length) {
             tryLoadPreviewImage();
           } else {
+            console.warn(`Could not load badge image for level ${level}`);
             previewImage.style.display = 'none';
           }
         };
         
+        // Start loading the image
         tryLoadPreviewImage();
+      } else {
+        previewDiv.style.display = 'none';
       }
     }
 
